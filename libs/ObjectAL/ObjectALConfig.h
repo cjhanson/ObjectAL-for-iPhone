@@ -74,7 +74,11 @@
  *
  * Recommended setting: 1
  */
+#if DEBUG
+#define OBJECTAL_CFG_LOG_LEVEL 3
+#else
 #define OBJECTAL_CFG_LOG_LEVEL 1
+#endif
 
 
 /** The CLANG/LLVM 1.5 compiler that ships with XCode 3.2.3 fails when compiling a method

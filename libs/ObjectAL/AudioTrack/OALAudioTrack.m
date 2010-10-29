@@ -32,6 +32,9 @@
 #import "OALAudioSupport.h"
 #import "OALUtilityActions.h"
 #import "ObjectALMacros.h"
+#import "OALAudioPlayer.h"
+#import "OALAudioPlayerAVPlayer.h"
+#import "OALAudioPlayerAVAudioPlayer.h"
 
 #pragma mark Asynchronous Operations
 
@@ -245,9 +248,22 @@
 		
 		operationQueue = [[NSOperationQueue alloc] init];
 		operationQueue.maxConcurrentOperationCount = 1;
+		
+		meteringEnabled = false;
+		suspended = false;
+		player = nil;
+		currentlyLoadedUrl = nil;
+		paused = false;
+		muted = false;
 		gain = 1.0f;
+		pan = 0.5f;
 		numberOfLoops = 0;
+		delegate = nil;
+		simulatorPlayerRef = nil;
+		playing =  false;
 		currentTime = 0.0;
+		gainAction	= nil;
+		panAction = nil;
 		
 		[[OALAudioTracks sharedInstance] notifyTrackInitializing:self];
 	}
@@ -278,7 +294,7 @@
 
 @synthesize currentlyLoadedUrl;
 
-- (id<AVAudioPlayerDelegate>) delegate
+- (id<OALAudioPlayerDelegate>) delegate
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
@@ -286,7 +302,7 @@
 	}
 }
 
-- (void) setDelegate:(id<AVAudioPlayerDelegate>) value
+- (void) setDelegate:(id<OALAudioPlayerDelegate>) value
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
@@ -306,11 +322,8 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
-		if(isIOS40OrHigher)
-		{
-			pan = value;
-			player.pan = pan;
-		}
+		pan = value;
+		player.pan = pan;
 	}
 }
 
@@ -450,11 +463,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
-		if(isIOS40OrHigher)
-		{
-			return player.deviceCurrentTime;
-		}
-		return 0;
+		return player.deviceCurrentTime;
 	}
 }
 
@@ -518,7 +527,17 @@
 		}
 		
 		NSError* error;
-		player = [[AVAudioPlayer alloc] initWithContentsOfURL:url error:&error];
+		if(YES || [[url scheme] isEqualToString:@"ipod-library"])
+		{
+			OAL_LOG_INFO(@"Loading from iPod using AVPlayer: %@", url);
+			player = [[OALAudioPlayerAVPlayer alloc] initWithContentsOfURL:url error:&error];
+		}
+		else
+		{
+			OAL_LOG_INFO(@"Loading url using AVAudioPlayer: %@", url);
+			player = [[OALAudioPlayerAVAudioPlayer alloc] initWithContentsOfURL:url error:&error];
+		}
+		
 		if(nil != error)
 		{
 			OAL_LOG_ERROR(@"Could not load URL %@: %@", url, [error localizedDescription]);
@@ -529,11 +548,7 @@
 		player.numberOfLoops = numberOfLoops;
 		player.meteringEnabled = meteringEnabled;
 		player.delegate = self;
-		isIOS40OrHigher = [player respondsToSelector:@selector(pan)];
-		if(isIOS40OrHigher)
-		{
-			player.pan = pan;
-		}
+		player.pan = pan;
 		
 		[currentlyLoadedUrl release];
 		currentlyLoadedUrl = [url retain];
@@ -549,10 +564,17 @@
 		}
 		else
 		{
-			[[NSNotificationCenter defaultCenter] performSelectorOnMainThread:@selector(postNotification:) withObject:[NSNotification notificationWithName:OALAudioTrackSourceChangedNotification object:self] waitUntilDone:NO];
+			[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(postTrackSourceChangedNotification:) name:@"OALAudioPlayerReady" object:player];
 		}
 		return allOK;
 	}
+}
+
+- (void) postTrackSourceChangedNotification:(NSNotification *)notification
+{
+	[[NSNotificationCenter defaultCenter] removeObserver:self name:@"OALAudioPlayerReady" object:player];
+	
+	[[NSNotificationCenter defaultCenter] performSelectorOnMainThread:@selector(postNotification:) withObject:[NSNotification notificationWithName:OALAudioTrackSourceChangedNotification object:self] waitUntilDone:NO];
 }
 
 - (bool) preloadFile:(NSString*) path
@@ -672,22 +694,18 @@
 			return NO;
 		}
 		
-		if(isIOS40OrHigher)
+		[self stopActions];
+		SIMULATOR_BUG_WORKAROUND_PREPARE_PLAYBACK();
+		player.currentTime = currentTime;
+		player.volume = muted ? 0 : gain;
+		player.numberOfLoops = numberOfLoops;
+		paused = NO;
+		playing = [player playAtTime:time];
+		if(playing)
 		{
-			[self stopActions];
-			SIMULATOR_BUG_WORKAROUND_PREPARE_PLAYBACK();
-			player.currentTime = currentTime;
-			player.volume = muted ? 0 : gain;
-			player.numberOfLoops = numberOfLoops;
-			paused = NO;
-			playing = [player playAtTime:time];
-			if(playing)
-			{
-				[[NSNotificationCenter defaultCenter] performSelectorOnMainThread:@selector(postNotification:) withObject:[NSNotification notificationWithName:OALAudioTrackStartedPlayingNotification object:self] waitUntilDone:NO];
-			}
-			return playing;
+			[[NSNotificationCenter defaultCenter] performSelectorOnMainThread:@selector(postNotification:) withObject:[NSNotification notificationWithName:OALAudioTrackStartedPlayingNotification object:self] waitUntilDone:NO];
 		}
-		return NO;
+		return playing;
 	}
 }
 
@@ -751,32 +769,26 @@
 		target:(id) target
 	  selector:(SEL) selector
 {
-	if(isIOS40OrHigher)
+	// Must always be synchronized
+	@synchronized(self)
 	{
-		// Must always be synchronized
-		@synchronized(self)
-		{
-			[self stopPan];
-			panAction = [[OALSequentialActions actions:
-						  [OALPanAction actionWithDuration:duration endValue:value],
-						  [OALCallAction actionWithCallTarget:target selector:selector withObject:self],
-						  nil] retain];
-			[panAction runWithTarget:self];
-		}
+		[self stopPan];
+		panAction = [[OALSequentialActions actions:
+					  [OALPanAction actionWithDuration:duration endValue:value],
+					  [OALCallAction actionWithCallTarget:target selector:selector withObject:self],
+					  nil] retain];
+		[panAction runWithTarget:self];
 	}
 }
 
 - (void) stopPan
 {
-	if(isIOS40OrHigher)
+	// Must always be synchronized
+	@synchronized(self)
 	{
-		// Must always be synchronized
-		@synchronized(self)
-		{
-			[panAction stopAction];
-			[panAction release];
-			panAction = nil;
-		}
+		[panAction stopAction];
+		[panAction release];
+		panAction = nil;
 	}
 }
 
@@ -884,10 +896,10 @@
 }
 
 #pragma mark -
-#pragma mark AVAudioPlayerDelegate
+#pragma mark OALAudioPlayerDelegate
 
 #if TARGET_OS_IPHONE
-- (void) audioPlayerBeginInterruption:(AVAudioPlayer*) playerIn
+- (void) audioPlayerBeginInterruption:(OALAudioPlayer*) playerIn
 {
 	if([delegate respondsToSelector:@selector(audioPlayerBeginInterruption:)])
 	{
@@ -896,7 +908,7 @@
 }
 
 #if defined(__MAC_10_7) || defined(__IPHONE_4_0)
-- (void)audioPlayerEndInterruption:(AVAudioPlayer *)playerIn withFlags:(NSUInteger)flags
+- (void)audioPlayerEndInterruption:(OALAudioPlayer *)playerIn withFlags:(NSUInteger)flags
 {
 	if([delegate respondsToSelector:@selector(audioPlayerEndInterruption:withFlags:)])
 	{
@@ -905,7 +917,7 @@
 }
 #endif
 
-- (void) audioPlayerEndInterruption:(AVAudioPlayer*) playerIn
+- (void) audioPlayerEndInterruption:(OALAudioPlayer*) playerIn
 {
 	if([delegate respondsToSelector:@selector(audioPlayerEndInterruption:)])
 	{
@@ -914,7 +926,7 @@
 }
 #endif //TARGET_OS_IPHONE
 
-- (void) audioPlayerDecodeErrorDidOccur:(AVAudioPlayer*) playerIn error:(NSError*) error
+- (void) audioPlayerDecodeErrorDidOccur:(OALAudioPlayer*) playerIn error:(NSError*) error
 {
 	if([delegate respondsToSelector:@selector(audioPlayerDecodeErrorDidOccur:error:)])
 	{
@@ -922,7 +934,7 @@
 	}
 }
 
-- (void) audioPlayerDidFinishPlaying:(AVAudioPlayer*) playerIn successfully:(BOOL) flag
+- (void) audioPlayerDidFinishPlaying:(OALAudioPlayer*) playerIn successfully:(BOOL) flag
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{

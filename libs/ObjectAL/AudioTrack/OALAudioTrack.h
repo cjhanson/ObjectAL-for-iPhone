@@ -28,30 +28,32 @@
 #import "OALAction.h"
 #import "OALAudioTrackNotifications.h"
 
+@class OALAudioPlayer;
+
 /**
- * Plays an audio track via AVAudioPlayer.
- * Unlike AVAudioPlayer, however, it can be re-used to play another file.
+ * Plays an audio track via whatever API is neccessary for the given file type and location.
+ * It can be re-used to play another file.
  * Interruptions can be handled by OALAudioSupport (enabled by default).
  */
-@interface OALAudioTrack : NSObject <AVAudioPlayerDelegate>
+@interface OALAudioTrack : NSObject <OALAudioPlayerDelegate>
 {
 	bool meteringEnabled;
 	bool suspended;
-	AVAudioPlayer* player;
+	OALAudioPlayer* player;
 	NSURL* currentlyLoadedUrl;
 	bool paused;
 	bool muted;
 	float gain;
 	float pan;
 	NSInteger numberOfLoops;
-	id<AVAudioPlayerDelegate> delegate; // Weak reference
+	id<OALAudioPlayerDelegate> delegate; // Weak reference
 	
 	/** When the simulator is running (and the playback fix is in use),
 	 * player will be copied to here, and then player set to nil.
 	 * This prevents other code from inadvertently raising the volume
 	 * and starting playback.
 	 */
-	AVAudioPlayer* simulatorPlayerRef;
+	OALAudioPlayer* simulatorPlayerRef;
 	
 	/** Operation queue for running asynchronous operations.
 	 * <strong>Note:</strong> Only one asynchronous operation is allowed at a time.
@@ -59,14 +61,11 @@
 	NSOperationQueue* operationQueue;
 	
 	/** If true, the audio player is currently playing.
-	 * We need to maintain our own value because AVAudioPlayer will
+	 * We need to maintain our own value because OALAudioPlayer will
 	 * sometimes say it's not playing when it actually is.
 	 */
 	bool playing;
 	NSTimeInterval currentTime;
-	
-	/** Check to see if we are running iOS 4.0 or higher. */
-	bool isIOS40OrHigher;
 	
 	/** The current action being applied to gain. */
 	OALAction* gainAction;
@@ -86,7 +85,7 @@
  * <strong>Note:</strong> OALAudioTrack keeps a WEAK reference to delegate, so make sure you clear it
  * when your object is going to be deallocated.
  */
-@property(readwrite,assign) id<AVAudioPlayerDelegate> delegate;
+@property(readwrite,assign) id<OALAudioPlayerDelegate> delegate;
 
 /** The gain (volume) for playback (0.0 - 1.0, where 1.0 = no attenuation). */
 @property(readwrite,assign) float gain;
@@ -111,11 +110,11 @@
 /** If true, pause playback. */
 @property(readwrite,assign) bool paused;
 
-/** Access to the underlying AVAudioPlayer object.
+/** Access to the underlying OALAudioPlayer object.
  * WARNING: Be VERY careful when accessing this, as some methods could cause
  * it to fall out of sync with OALAudioTrack (particularly play/pause/stop methods).
  */
-@property(readonly) AVAudioPlayer* player;
+@property(readonly) OALAudioPlayer* player;
 
 /** If true, background music is currently playing. */
 @property(readonly) bool playing;

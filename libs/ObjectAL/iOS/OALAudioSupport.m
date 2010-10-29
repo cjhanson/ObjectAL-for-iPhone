@@ -586,7 +586,16 @@ done:
 	{
 		return nil;
 	}
+	
 	NSString* fullPath = path;
+	
+	NSRange urlCharRange = [fullPath rangeOfString:@":"];
+	if(urlCharRange.length > 0)
+	{
+		return [NSURL URLWithString:fullPath];
+	}
+	
+	
 	if([fullPath characterAtIndex:0] != '/')
 	{
 		fullPath = [[NSBundle mainBundle] pathForResource:[[path pathComponents] lastObject] ofType:nil];
