@@ -27,8 +27,7 @@
 #import <AVFoundation/AVFoundation.h>
 #import "OALAction.h"
 #import "OALAudioTrackNotifications.h"
-
-@class OALAudioPlayer;
+#import "OALAudioPlayer.h"
 
 /**
  * Plays an audio track via whatever API is neccessary for the given file type and location.
@@ -74,6 +73,8 @@
 	OALAction* panAction;
 }
 
++ (void) setPreferredPlayerType:(OALAudioPlayerType)aPlayerType;
++ (OALAudioPlayerType) preferredPlayerType;
 
 #pragma mark Properties
 
@@ -132,9 +133,9 @@
  * If the audio output device has no connected audio players that are either playing or paused,
  * device time reverts to 0. <br><br>
  *
- * Use this property to indicate “now” when calling the playAtTime: instance method. By configuring
+ * Use this property to indicate "now" when calling the playAtTime: instance method. By configuring
  * multiple audio players to play at a specified offset from deviceCurrentTime, you can perform
- * precise synchronization—as described in the discussion for that method.
+ * precise synchronization-as described in the discussion for that method.
  *
  * <strong>Note:</strong> This will have no effect on iOS versions prior to 4.0.
  */
@@ -310,7 +311,7 @@
  */
 - (bool) play;
 
-/** Plays a sound asynchronously, starting at a specified point in the audio output device’s timeline.
+/** Plays a sound asynchronously, starting at a specified point in the audio output device's timeline.
  *
  * <strong>Note:</strong> This will have no effect on iOS versions prior to 4.0.
  */

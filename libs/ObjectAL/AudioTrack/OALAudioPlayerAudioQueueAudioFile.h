@@ -1,8 +1,8 @@
 //
-//  OALAudioPlayerAVPlayer.h
+//  OALAudioPlayerAudioQueueAudioFile.h
 //  ObjectAL
 //
-//  Created by CJ Hanson on 29-OCT-2010
+//  Created by CJ Hanson on 30-OCT-2010
 //
 // Copyright 2010 CJ Hanson
 //
@@ -24,23 +24,10 @@
 // Attribution is not required, but appreciated :)
 //
 
-#import <AVFoundation/AVFoundation.h>
 #import "OALAudioPlayer.h"
 
-@interface OALAudioPlayerAVPlayer : OALAudioPlayer {
-	BOOL wasIPodAllowedBeforePlaybackStarted;
-	AVPlayer* player;
-	AVURLAsset* asset;
-	
-	//Helpers
-	BOOL isPodSource;
-	NSURL *url;
-	float volume;
-	BOOL isPlaying;
-	NSInteger loopCount;
-	NSInteger numberOfLoops;
-}
+@interface OALAudioPlayerAudioQueueAudioFile : OALAudioPlayer {
 
-@property (nonatomic, retain) AVPlayer *player;
+}
 
 @end

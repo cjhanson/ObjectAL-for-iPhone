@@ -27,8 +27,38 @@
 //
 
 #import "OALAudioPlayer.h"
+#import "OALAudioPlayerAVAudioPlayer.h"
+#import "OALAudioPlayerAVPlayer.h"
+#import "OALAudioPlayerAudioQueueAVAssetReader.h"
+#import "OALAudioPlayerAudioQueueAudioFile.h"
 
 @implementation OALAudioPlayer
+
++ (Class) getClassForPlayerType:(OALAudioPlayerType)aPlayerType
+{
+	Class aClass = nil;
+	switch(aPlayerType)
+	{
+		case OALAudioPlayerTypeAVAudioPlayer:
+			aClass = [OALAudioPlayerAVAudioPlayer class];
+			break;
+		case OALAudioPlayerTypeAVPlayer:
+			aClass = [OALAudioPlayerAVPlayer class];
+			break;
+		case OALAudioPlayerTypeAudioQueueAudioFile:
+			aClass = [OALAudioPlayerAudioQueueAudioFile class];
+			break;
+		case OALAudioPlayerTypeAudioQueueAVAssetReader:
+			aClass = [OALAudioPlayerAudioQueueAVAssetReader class];
+			break;
+		default:
+			aClass = [OALAudioPlayerAVAudioPlayer class];
+			break;
+	}
+	return aClass;
+}
+
+@synthesize playerType;
 
 - (void) dealloc
 {
@@ -40,6 +70,7 @@
 	self = [super init];
 	if(self){
 		delegate = nil;
+		playerType = OALAudioPlayerTypeInvalid;
 	}
 	return self;
 }
@@ -56,6 +87,11 @@
 	[self doesNotRecognizeSelector:_cmd];
 	[self release];
 	return nil;
+}
+
+- (void) postPlayerReadyNotification
+{
+	[[NSNotificationCenter defaultCenter] postNotificationName:@"OALAudioPlayerReady" object:self];
 }
 
 - (void) setDelegate:(id <OALAudioPlayerDelegate>)d

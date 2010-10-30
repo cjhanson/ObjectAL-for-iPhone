@@ -2,7 +2,7 @@
 //  OALAudioPlayerAudioQueueAVAssetReader.m
 //  ObjectAL
 //
-//  Created by CJ Hanson on 29-OCT-2010
+//  Created by CJ Hanson on 30-OCT-2010
 //
 // Copyright 2010 CJ Hanson
 //
@@ -29,7 +29,59 @@
 
 @implementation OALAudioPlayerAudioQueueAVAssetReader
 
+- (id)initWithContentsOfURL:(NSURL *)inUrl error:(NSError **)outError
+{
+	self = [super init];
+	if(self){
+#if 0
+		NSDictionary *options	= nil;//[NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES] forKey:AVURLAssetPreferPreciseDurationAndTimingKey];
+		asset					= [[AVURLAsset alloc] initWithURL:inUrl options:options];
+		if(!asset){
+			if(outError)
+				*outError		= [NSError errorWithDomain:@"AVPlayer failed with AVURLAsset" code:-1 userInfo:nil];
+			[self release];
+			return nil;
+		}
+		
+		AVPlayerItem *item		= [[AVPlayerItem alloc] initWithAsset:asset];
+		player					= [[AVPlayer alloc] initWithPlayerItem:item];
+		[item release];
+		
+		if(!player){
+			if(outError)
+				*outError		= [NSError errorWithDomain:@"AVPlayer failed with AVPlayerItem" code:-1 userInfo:nil];
+			[self release];
+			return nil;
+		}
+		
+		if(outError)
+			*outError			= nil;
+		
+		playerType = OALAudioPlayerTypeAudioQueueAVAssetReader;
+		
+		url = [inUrl retain];
+		volume = 1.0f;
+		isPlaying = NO;
+		loopCount = 0;
+		isPodSource				= [[url scheme] isEqualToString:@"ipod-library"];
+		
+		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onAVPlayerItemDidPlayToEndTimeNotification:) name:AVPlayerItemDidPlayToEndTimeNotification object:player];
+#endif	
+		[self performSelector:@selector(postPlayerReadyNotification) withObject:nil afterDelay:0.01];
+	}
+	return self;
+}
+
+- (id)initWithData:(NSData *)data error:(NSError **)outError
+{
+	[self doesNotRecognizeSelector:_cmd];
+	[self release];
+	return nil;
+}
+
 @end
+
+#if 0
 
 #import "CJAudioErrors.h"
 #import "CJAudioSessionNotifications.h"
@@ -1403,3 +1455,4 @@ static void BufferCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 }
 
 @end
+#endif

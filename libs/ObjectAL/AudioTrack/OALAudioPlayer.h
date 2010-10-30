@@ -30,6 +30,36 @@
 #import "OALAudioTrackNotifications.h"
 
 /*!
+ @enum OALAudioPlayerType
+ @abstract
+ These constants are used to identify the specific implementation of the audio player.
+ 
+ @constant OALAudioPlayerTypeInvalid
+ Used by the abstract base class to indiciate it is itself invalid for use.
+ @constant OALAudioPlayerTypeAVAudioPlayer
+ Used to denote an underlying AVAudioPlayer
+ @constant OALAudioPlayerTypeAVPlayer
+ Used to denote an underlying AVPlayer
+ @constant OALAudioPlayerTypeAudioQueueAVAssetReader
+ Used to denote an underlying AudioQueue reading an AVAsset
+ @constant OALAudioPlayerTypeAudioQueueAudioFile
+ Used to denote an underlying AudioQueue reading an file
+ @constant OALAudioPlayerTypeDefault
+ Used to select the default implementation, but is not a valid value when subclassing OALAudioPlayer ;)
+ */
+enum {
+	OALAudioPlayerTypeInvalid = -1,
+	OALAudioPlayerTypeAVAudioPlayer,
+	OALAudioPlayerTypeAVPlayer,
+	OALAudioPlayerTypeAudioQueueAVAssetReader,
+	OALAudioPlayerTypeAudioQueueAudioFile,
+	
+	//! Default
+	OALAudioPlayerTypeDefault = OALAudioPlayerTypeAudioQueueAVAssetReader
+};
+typedef NSInteger OALAudioPlayerType;
+
+/*!
  @enum OALPlayerStatus
  @abstract
  These constants are returned by the OALPlayer status property to indicate whether it can successfully play items.
@@ -51,8 +81,13 @@ enum {
 typedef NSInteger OALPlayerStatus;
 
 @interface OALAudioPlayer : NSObject {
+	OALAudioPlayerType playerType;
 	id<OALAudioPlayerDelegate> delegate;
 }
+
++ (Class) getClassForPlayerType:(OALAudioPlayerType)aPlayerType;
+
+- (void) postPlayerReadyNotification;
 
 /* transport control */
 /* methods that return BOOL return YES on success and NO on failure. */
@@ -63,6 +98,8 @@ typedef NSInteger OALPlayerStatus;
 - (void)stop;			/* stops playback. no longer ready to play. */
 
 /* properties */
+
+@property (readonly) OALAudioPlayerType playerType;
 
 @property(readonly, getter=isPlaying) BOOL playing;
 

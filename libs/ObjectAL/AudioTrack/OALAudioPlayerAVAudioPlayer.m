@@ -27,10 +27,7 @@
 //
 
 #import "OALAudioPlayerAVAudioPlayer.h"
-
-@interface OALAudioPlayerAVAudioPlayer (PrivateMethods)
-- (void) postPlayerReadyNotification;
-@end
+#import "OALAudioSupport.h"
 
 @implementation OALAudioPlayerAVAudioPlayer
 @synthesize player;
@@ -52,6 +49,8 @@
 		}
 		player.delegate = self;
 		
+		playerType = OALAudioPlayerTypeAVAudioPlayer;
+		
 		[self performSelector:@selector(postPlayerReadyNotification) withObject:nil afterDelay:0.01];
 	}
 	return self;
@@ -64,14 +63,11 @@
 		player = [[AVAudioPlayer alloc] initWithData:data error:outError];
 		player.delegate = self;
 		
+		playerType = OALAudioPlayerTypeAVAudioPlayer;
+		
 		[self performSelector:@selector(postPlayerReadyNotification) withObject:nil afterDelay:0.01];
 	}
 	return self;
-}
-
-- (void) postPlayerReadyNotification
-{
-	[[NSNotificationCenter defaultCenter] postNotificationName:@"OALAudioPlayerReady" object:self];
 }
 
 #pragma mark -

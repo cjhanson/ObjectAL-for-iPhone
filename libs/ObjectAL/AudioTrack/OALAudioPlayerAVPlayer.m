@@ -28,10 +28,6 @@
 #import "OALAudioSupport.h"
 #import "ObjectALMacros.h"
 
-@interface OALAudioPlayerAVPlayer (PrivateMethods)
-- (void) postPlayerReadyNotification;
-@end
-
 @implementation OALAudioPlayerAVPlayer
 @synthesize player;
 
@@ -52,7 +48,8 @@
 		NSDictionary *options	= nil;//[NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES] forKey:AVURLAssetPreferPreciseDurationAndTimingKey];
 		asset					= [[AVURLAsset alloc] initWithURL:inUrl options:options];
 		if(!asset){
-			*outError			= [NSError errorWithDomain:@"AVPlayer failed with AVURLAsset" code:-1 userInfo:nil];
+			if(outError)
+				*outError		= [NSError errorWithDomain:@"AVPlayer failed with AVURLAsset" code:-1 userInfo:nil];
 			[self release];
 			return nil;
 		}
@@ -62,19 +59,22 @@
 		[item release];
 		
 		if(!player){
-			*outError			= [NSError errorWithDomain:@"AVPlayer failed with AVPlayerItem" code:-1 userInfo:nil];
+			if(outError)
+				*outError		= [NSError errorWithDomain:@"AVPlayer failed with AVPlayerItem" code:-1 userInfo:nil];
 			[self release];
 			return nil;
 		}
 		
-		*outError				= nil;
+		if(outError)
+			*outError			= nil;
+		
+		playerType = OALAudioPlayerTypeAVPlayer;
 		
 		url = [inUrl retain];
 		volume = 1.0f;
 		isPlaying = NO;
 		loopCount = 0;
-		
-		OAL_LOG_INFO(@"currentItem: %@", player.currentItem);
+		isPodSource				= [[url scheme] isEqualToString:@"ipod-library"];
 		
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onAVPlayerItemDidPlayToEndTimeNotification:) name:AVPlayerItemDidPlayToEndTimeNotification object:player];
 		
@@ -98,17 +98,12 @@
 		return;
 	}
 	dispatch_async(dispatch_get_main_queue(), ^{
-		isPlaying = NO;
+		[self stop];
 		if([delegate respondsToSelector:@selector(audioPlayerDidFinishPlaying:successfully:)])
 		{
 			[delegate audioPlayerDidFinishPlaying:self successfully:YES];
 		}
 	});
-}
-
-- (void) postPlayerReadyNotification
-{
-	[[NSNotificationCenter defaultCenter] postNotificationName:@"OALAudioPlayerReady" object:self];
 }
 
 #pragma mark -
@@ -123,8 +118,13 @@
 /* sound is played asynchronously. */
 - (BOOL)play
 {
-	wasIPodAllowedBeforePlaybackStarted = [OALAudioSupport sharedInstance].allowIpod;
-	[OALAudioSupport sharedInstance].allowIpod = YES;
+	if(isPlaying)
+		return YES;
+	
+	if(isPodSource){
+		wasIPodAllowedBeforePlaybackStarted = [OALAudioSupport sharedInstance].allowIpod;
+		[OALAudioSupport sharedInstance].allowIpod = YES;
+	}
 	loopCount = 0;
 	isPlaying = YES;
 	[player play];
@@ -140,19 +140,20 @@
 /* pauses playback, but remains ready to play. */
 - (void)pause
 {
+	if(!isPlaying)
+		return;
 	isPlaying = NO;
 	[player pause];
 	
-	[OALAudioSupport sharedInstance].allowIpod = wasIPodAllowedBeforePlaybackStarted;
+	if(isPodSource && !wasIPodAllowedBeforePlaybackStarted){
+		[OALAudioSupport sharedInstance].allowIpod = wasIPodAllowedBeforePlaybackStarted;
+	}
 }
 
 /* stops playback. no longer ready to play. */
 - (void)stop
 {
-	isPlaying = NO;
-	[player pause];
-	
-	[OALAudioSupport sharedInstance].allowIpod = wasIPodAllowedBeforePlaybackStarted;
+	[self pause];
 }
 
 /* properties */

@@ -234,6 +234,17 @@
 
 #pragma mark Object Management
 
+static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
++ (void) setPreferredPlayerType:(OALAudioPlayerType)aPlayerType
+{
+	preferredPlayerType = aPlayerType;
+}
+
++ (OALAudioPlayerType) preferredPlayerType
+{
+	return preferredPlayerType;
+}
+
 + (id) track
 {
 	return [[[self alloc] init] autorelease];
@@ -510,6 +521,7 @@
 		// Only load if it's not the same URL as last time.
 		if([[url absoluteString] isEqualToString:[currentlyLoadedUrl absoluteString]])
 		{
+			[self performSelector:@selector(postTrackSourceChangedNotification:) withObject:nil afterDelay:0.01];
 			return YES;
 		}
 		
@@ -527,18 +539,16 @@
 		}
 		
 		NSError* error;
-		if(YES || [[url scheme] isEqualToString:@"ipod-library"])
+		Class playerClass = [OALAudioPlayer getClassForPlayerType:preferredPlayerType];
+		if(!playerClass)
 		{
-			OAL_LOG_INFO(@"Loading from iPod using AVPlayer: %@", url);
-			player = [[OALAudioPlayerAVPlayer alloc] initWithContentsOfURL:url error:&error];
-		}
-		else
-		{
-			OAL_LOG_INFO(@"Loading url using AVAudioPlayer: %@", url);
-			player = [[OALAudioPlayerAVAudioPlayer alloc] initWithContentsOfURL:url error:&error];
+			OAL_LOG_ERROR(@"Could not get class of preferred type: %d", preferredPlayerType);
+			return NO;
 		}
 		
-		if(nil != error)
+		player = (OALAudioPlayer *)[[playerClass alloc] initWithContentsOfURL:url error:&error];
+		
+		if(player == nil)
 		{
 			OAL_LOG_ERROR(@"Could not load URL %@: %@", url, [error localizedDescription]);
 			return NO;

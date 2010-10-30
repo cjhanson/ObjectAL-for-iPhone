@@ -2,7 +2,7 @@
 //  OALAudioPlayerAudioQueueAVAssetReader.h
 //  ObjectAL
 //
-//  Created by CJ Hanson on 29-OCT-2010
+//  Created by CJ Hanson on 30-OCT-2010
 //
 // Copyright 2010 CJ Hanson
 //
@@ -31,6 +31,7 @@
 }
 
 @end
+#if 0
 
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
@@ -100,3 +101,5 @@ typedef struct CJDSP CJDSP;
 - (BOOL)prepareToPlayAsset:(AVAsset *)anAsset;
 
 @end
+
+#endif
