@@ -24,10 +24,39 @@
 // Attribution is not required, but appreciated :)
 //
 
+#import "ObjectALConfig.h"
 #import "OALAudioPlayer.h"
+#import <AVFoundation/AVFoundation.h>
+#import <AudioToolbox/AudioToolbox.h>
+#import <CoreMedia/CoreMedia.h>
 
 @interface OALAudioPlayerAudioQueueAVAssetReader : OALAudioPlayer {
-
+	
+	NSURL							*url;
+	float							volume;
+	NSInteger						loopCount;
+	NSInteger						numberOfLoops;
+	OALPlayerStatus					status;
+	OALPlayerState					state;
+	
+	AudioQueueBufferRef				buffers[OBJECTAL_CFG_AUDIO_QUEUE_NUM_BUFFERS];
+	AudioStreamBasicDescription		dataFormat;
+	AudioQueueRef					queue;
+	AudioQueueTimelineRef			queueTimeline;
+	SInt64							packetIndex;
+	UInt32							numPacketsToRead;
+	BOOL							trackEnded;
+	
+	AVAssetReader					*assetReader;
+	AVAssetReaderAudioMixOutput		*assetReaderMixerOutput;
+	AVURLAsset						*asset;
+	
+	NSTimeInterval					seekTimeOffset;
+	
+	BOOL							isPodSource;
+	BOOL							wasIPodAllowedBeforePlaybackStarted;
+	
+	NSTimeInterval					positionBeforeInterruption;
 }
 
 @end
@@ -35,7 +64,7 @@
 
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
-#import <AudioToolbox/AudioToolbox.h>
+
 #import <AssetsLibrary/AssetsLibrary.h>
 #import <CoreMedia/CoreMedia.h>
 #import <Accelerate/Accelerate.h>

@@ -29,6 +29,8 @@
 #import "SynthesizeSingleton.h"
 #import "ALBuffer.h"
 
+extern NSString *const OALAudioSessionInterruptBeginNotification;
+extern NSString *const OALAudioSessionInterruptEndNotification;
 
 #pragma mark OALAudioSupport
 
@@ -265,5 +267,33 @@ SYNTHESIZE_SINGLETON_FOR_CLASS_HEADER(OALAudioSupport);
 + (void) logExtAudioError:(OSStatus)errorCode
 				 function:(const char*) function
 			  description:(NSString*) description, ...;
+
+/** Log an error if the specified AudioQueue error code indicates an error.
+ *
+ * @param errorCode: The error code returned from an OS call.
+ * @param function: The function name where the error occurred.
+ * @param description: A printf-style description of what happened.
+ */
++ (void) logAudioQueueError:(OSStatus)errorCode
+				 function:(const char*) function
+			  description:(NSString*) description, ...;
+
+/** Get a pretty description from an AudioStreamBasicDescription struct
+ *
+ * @param absd: Pointer to an AudioStreamBasicDescription
+ */
++ (NSString *) stringFromAudioStreamBasicDescription:(const AudioStreamBasicDescription *)absd;
+
+/** Get a pretty description from an AVAssetReaderAudioMixOutput options dictionary
+ *
+ * @param optionsDictionary: NSDictionary with proper keys to be used with AVAssetReaderAudioMixOutput
+ */
++ (NSString *) stringFromAVAssetReaderAudioMixOutputOptionsDictionary:(NSDictionary *)optionsDictionary;
+
+/** Get a pretty description from an AVAssetReaderStatus
+ *
+ * @param status: AVAssetReaderStatus
+ */
++ (NSString *) stringFromAVAssetReaderStatus:(AVAssetReaderStatus)status;
 
 @end

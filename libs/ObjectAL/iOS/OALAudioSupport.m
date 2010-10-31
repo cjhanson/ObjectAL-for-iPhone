@@ -30,19 +30,11 @@
 #import "OALAudioTracks.h"
 #import "OpenALManager.h"
 
+NSString *const OALAudioSessionInterruptBeginNotification	= @"OALAudioSessionInterruptBeginNotification";
+NSString *const OALAudioSessionInterruptEndNotification		= @"OALAudioSessionInterruptEndNotification";
+
 
 #define kMaxSessionActivationRetries 40
-
-/** Dictionary mapping audio session error codes to human readable descriptions.
- * Key: NSNumber, Value: NSString
- */
-NSDictionary* audioSessionErrorCodes = nil;
-
-/** Dictionary mapping ExtAudio error codes to human readable descriptions.
- * Key: NSNumber, Value: NSString
- */
-NSDictionary* extAudioErrorCodes = nil;
-
 
 #pragma mark Asynchronous Operations
 
@@ -203,10 +195,6 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(OALAudioSupport);
 	self.audioSessionActive = NO;
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[operationQueue release];
-	[audioSessionErrorCodes release];
-	audioSessionErrorCodes = nil;
-	[extAudioErrorCodes release];
-	extAudioErrorCodes = nil;
 	[super dealloc];
 }
 
@@ -503,40 +491,116 @@ done:
 
 #pragma mark Audio Error Utility
 
+NSString *GetNSStringFromAudioSessionError(OSStatus errorCode)
+{
+	switch (errorCode) {
+		case kAudioSessionNoError:
+			return nil;
+			break;
+		case kAudioSessionNotInitialized:
+			return @"Session not initialized";
+			break;
+		case kAudioSessionAlreadyInitialized:
+			return @"Session already initialized";
+			break;
+		case kAudioSessionInitializationError:
+			return @"Sesion initialization error";
+			break;
+		case kAudioSessionUnsupportedPropertyError:
+			return @"Unsupported session property";
+			break;
+		case kAudioSessionBadPropertySizeError:
+			return @"Bad session property size";
+			break;
+		case kAudioSessionNotActiveError:
+			return @"Session is not active";
+			break;
+#if 0 // Documented but not implemented on iOS
+		case kAudioServicesNoHardwareError:
+			return @"Hardware not available for session";
+			break;
+#endif
+#ifdef __IPHONE_3_1
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_3_1
+		case kAudioSessionNoCategorySet:
+			return @"No session category set";
+			break;
+		case kAudioSessionIncompatibleCategory:
+			return @"Incompatible session category";
+			break;
+#endif /* __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_3_1 */
+#endif /* __IPHONE_3_1 */
+		default:
+			return [NSString stringWithFormat:@"Unknown error %d", errorCode];
+			break;
+	}
+}
+
 + (void) logAudioSessionError:(OSStatus)errorCode function:(const char*) function description:(NSString*) description, ...
 {
 	if(noErr != errorCode)
 	{
-		if(nil == audioSessionErrorCodes){
-			audioSessionErrorCodes = [[NSDictionary dictionaryWithObjectsAndKeys:
-									   @"Session not initialized", [NSNumber numberWithInt:kAudioSessionNotInitialized],
-									   @"Session already initialized", [NSNumber numberWithInt:kAudioSessionAlreadyInitialized],
-									   @"Sesion initialization error", [NSNumber numberWithInt:kAudioSessionInitializationError],
-									   @"Unsupported session property", [NSNumber numberWithInt:kAudioSessionUnsupportedPropertyError],
-									   @"Bad session property size", [NSNumber numberWithInt:kAudioSessionBadPropertySizeError],
-									   @"Session is not active", [NSNumber numberWithInt:kAudioSessionNotActiveError], 
-#if 0 // Documented but not implemented on iOS
-									   @"Hardware not available for session", [NSNumber numberWithInt:kAudioSessionNoHardwareError],
-#endif
+		NSString* errorString = GetNSStringFromAudioSessionError(errorCode);
+		if(nil != errorString)
+		{
+			va_list args;
+			va_start(args, description);
+			description = [[[NSString alloc] initWithFormat:description arguments:args] autorelease];
+			va_end(args);
+			OAL_LOG_ERROR_CONTEXT(function, @"%@ (error code 0x%08x: %@)", description, errorCode, errorString);
+		}
+	}
+}
+
+NSString *GetNSStringFromExtAudioFileError(OSStatus errorCode)
+{
+	switch (errorCode) {
+		case noErr:
+			return nil;
+			break;
 #ifdef __IPHONE_3_1
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_3_1
-									   @"No session category set", [NSNumber numberWithInt:kAudioSessionNoCategorySet],
-									   @"Incompatible session category",[NSNumber numberWithInt:kAudioSessionIncompatibleCategory],
+		case kExtAudioFileError_CodecUnavailableInputConsumed:
+			return @"Write function interrupted - last buffer written";
+			break;
+		case kExtAudioFileError_CodecUnavailableInputNotConsumed:
+			return @"Write function interrupted - last buffer not written";
+			break;
 #endif /* __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_3_1 */
 #endif /* __IPHONE_3_1 */
-									   nil] retain];			
-		}
-		
-		NSString* errorString = [audioSessionErrorCodes objectForKey:[NSNumber numberWithInt:errorCode]];
-		if(nil == errorString)
-		{
-			errorString = @"Unknown session error";
-		}
-		va_list args;
-		va_start(args, description);
-		description = [[[NSString alloc] initWithFormat:description arguments:args] autorelease];
-		va_end(args);
-		OAL_LOG_ERROR_CONTEXT(function, @"%@ (error code 0x%08x: %@)", description, errorCode, errorString);
+		case kExtAudioFileError_InvalidProperty:
+			return @"Invalid property";
+			break;
+		case kExtAudioFileError_InvalidPropertySize:
+			return @"Invalid property size";
+			break;
+		case kExtAudioFileError_NonPCMClientFormat:
+			return @"Non-PCM client format";
+			break;
+		case kExtAudioFileError_InvalidChannelMap:
+			return @"Wrong number of channels for format";
+			break;
+		case kExtAudioFileError_InvalidOperationOrder:
+			return @"Invalid operation order";
+			break;
+		case kExtAudioFileError_InvalidDataFormat:
+			return @"Invalid data format";
+			break;
+		case kExtAudioFileError_MaxPacketSizeUnknown:
+			return @"Max packet size unknown";
+			break;
+		case kExtAudioFileError_InvalidSeek:
+			return @"Seek offset out of bounds";
+			break;
+		case kExtAudioFileError_AsyncWriteTooLarge:
+			return @"Async write too large";
+			break;
+		case kExtAudioFileError_AsyncWriteBufferOverflow:
+			return @"Async write could not be completed in time";
+			break;
+		default:
+			return [NSString stringWithFormat:@"Unknown error %d", errorCode];
+			break;
 	}
 }
 
@@ -544,37 +608,193 @@ done:
 {
 	if(noErr != errorCode)
 	{
-		if(nil == extAudioErrorCodes){
-			extAudioErrorCodes = [[NSDictionary dictionaryWithObjectsAndKeys:
+		NSString* errorString = GetNSStringFromExtAudioFileError(errorCode);
+		if(nil != errorString)
+		{
+			va_list args;
+			va_start(args, description);
+			description = [[[NSString alloc] initWithFormat:description arguments:args] autorelease];
+			va_end(args);
+			OAL_LOG_ERROR_CONTEXT(function, @"%@ (error code 0x%08x: %@)", description, errorCode, errorString);
+		}
+	}
+}
+
+NSString *GetNSStringFromAudioQueueError(OSStatus errorCode)
+{
+	switch (errorCode) {
+		case noErr:
+			return nil;
+			break;
+		case kAudioQueueErr_InvalidBuffer:
+			return @"The specified audio queue buffer does not belong to the specified audio queue.";
+			break;
+		case kAudioQueueErr_BufferEmpty:
+			return @"The audio queue buffer is empty (that is, the mAudioDataByteSize field = 0).";
+			break;
+		case kAudioQueueErr_DisposalPending:
+			return @"The function cannot act on the audio queue because it is being asynchronously disposed of.";
+			break;
+		case kAudioQueueErr_InvalidProperty:
+			return @"The specified property ID is invalid.";
+			break;
+		case kAudioQueueErr_InvalidPropertySize:
+			return @"The size of the specified property is invalid.";
+			break;
+		case kAudioQueueErr_InvalidParameter:
+			return @"The specified parameter ID is invalid.";
+			break;
+		case kAudioQueueErr_CannotStart:
+			return @"The audio queue has encountered a problem and cannot start.";
+			break;
+		case kAudioQueueErr_InvalidDevice:
+			return @"The specified audio hardware device could not be located.";
+			break;
+		case kAudioQueueErr_BufferInQueue:
+			return @"The audio queue buffer cannot be disposed of when it is enqueued.";
+			break;
+		case kAudioQueueErr_InvalidRunState:
+			return @"The queue is running but the function can only operate on the queue when it is stopped, or vice versa.";
+			break;
+		case kAudioQueueErr_InvalidQueueType:
+			return @"The queue is an input queue but the function can only operate on an output queue, or vice versa.";
+			break;
+		case kAudioQueueErr_Permissions:
+			return @"You do not have the required permissions to call the function.";
+			break;
+		case kAudioQueueErr_InvalidPropertyValue:
+			return @"The property value used is not valid.";
+			break;
+		case kAudioQueueErr_PrimeTimedOut:
+			return @"During a call to the AudioQueuePrime function, the audio queue’s audio converter failed to convert the requested number of sample frames.";
+			break;
+		case kAudioQueueErr_CodecNotFound:
+			return @"The requested codec was not found.";
+			break;
+		case kAudioQueueErr_InvalidCodecAccess:
+			return @"The codec could not be accessed.";
+			break;
+		case kAudioQueueErr_QueueInvalidated:
+			return @"In iOS, the audio server has exited, causing the audio queue to become invalid.";
+			break;
+		case kAudioQueueErr_EnqueueDuringReset:
+			return @"During a call to the AudioQueueReset, AudioQueueStop, or AudioQueueDispose functions, the system does not allow you to enqueue buffers.";
+			break;
 #ifdef __IPHONE_3_1
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_3_1
-								   @"Write function interrupted - last buffer written", [NSNumber numberWithInt:kExtAudioFileError_CodecUnavailableInputConsumed],
-								   @"Write function interrupted - last buffer not written", [NSNumber numberWithInt:kExtAudioFileError_CodecUnavailableInputNotConsumed],
+		case kAudioQueueErr_InvalidOfflineMode:
+			return @"The operation requires the audio queue to be in offline mode but it isn’t, or vice versa.\nTo use offline mode or to return to normal mode, use the AudioQueueSetOfflineRenderFormat function.";
+			break;
+		case kAudioFormatUnsupportedDataFormatError:
+			return @"The playback data format is unsupported (declared in AudioFormat.h).";
+			break;
 #endif /* __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_3_1 */
 #endif /* __IPHONE_3_1 */
-								   @"Invalid property", [NSNumber numberWithInt:kExtAudioFileError_InvalidProperty],
-								   @"Invalid property size", [NSNumber numberWithInt:kExtAudioFileError_InvalidPropertySize],
-								   @"Non-PCM client format", [NSNumber numberWithInt:kExtAudioFileError_NonPCMClientFormat],
-								   @"Wrong number of channels for format", [NSNumber numberWithInt:kExtAudioFileError_InvalidChannelMap],
-								   @"Invalid operation order", [NSNumber numberWithInt:kExtAudioFileError_InvalidOperationOrder],
-								   @"Invalid data format", [NSNumber numberWithInt:kExtAudioFileError_InvalidDataFormat],
-								   @"Max packet size unknown", [NSNumber numberWithInt:kExtAudioFileError_MaxPacketSizeUnknown],
-								   @"Seek offset out of bounds", [NSNumber numberWithInt:kExtAudioFileError_InvalidSeek],
-								   @"Async write too large", [NSNumber numberWithInt:kExtAudioFileError_AsyncWriteTooLarge],
-								   @"Async write could not be completed in time", [NSNumber numberWithInt:kExtAudioFileError_AsyncWriteBufferOverflow],
-								   nil] retain];			
-		}
-		
-		NSString* errorString = [extAudioErrorCodes objectForKey:[NSNumber numberWithInt:errorCode]];
-		if(nil == errorString)
+		default:
+			return [NSString stringWithFormat:@"Unknown error %d", errorCode];
+			break;
+	}
+}
+
++ (void) logAudioQueueError:(OSStatus)errorCode function:(const char*) function description:(NSString*) description, ...
+{
+	if(noErr != errorCode)
+	{
+		NSString* errorString = GetNSStringFromAudioQueueError(errorCode);
+		if(nil != errorString)
 		{
-			errorString = @"Unknown ext audio error";
+			va_list args;
+			va_start(args, description);
+			description = [[[NSString alloc] initWithFormat:description arguments:args] autorelease];
+			va_end(args);
+			OAL_LOG_ERROR_CONTEXT(function, @"%@ (error code 0x%08x: %@)", description, errorCode, errorString);
 		}
-		va_list args;
-		va_start(args, description);
-		description = [[[NSString alloc] initWithFormat:description arguments:args] autorelease];
-		va_end(args);
-		OAL_LOG_ERROR_CONTEXT(function, @"%@ (error code 0x%08x: %@)", description, errorCode, errorString);
+	}
+}
+
+#pragma mark AudioStreamBasicDescription
+
+NSString *GetNSStringFrom4CharCode(unsigned long code)
+{
+	char c[5];
+	c[0]	= code >> 24;
+	c[1]	= (code >> 16) & 0xff;
+	c[2]	= (code >> 8) & 0xff;
+	c[3]	= code & 0xff;
+	c[4]	= '\0';
+	
+	return [NSString stringWithCString:c encoding:NSASCIIStringEncoding];
+}
+
++ (NSString *) stringFromAudioStreamBasicDescription:(const AudioStreamBasicDescription *)absd
+{
+	if(!absd)
+		return nil;
+	
+	return [NSString stringWithFormat:@"\n"
+			"  Sample Rate:        %f\n"
+			"  Format ID:          %@\n"
+			"  Format Flags:       %0x, BigEndian: %s, IsFloat: %s, IsNonInterleaved: %s\n"
+			"  Bytes per Packet:   %d\n"
+			"  Frames per Packet:  %d\n"
+			"  Bytes per Frame:    %d\n"
+			"  Channels per Frame: %d\n"
+			"  Bits per Channel:   %d",
+			absd->mSampleRate,
+			GetNSStringFrom4CharCode(absd->mFormatID),
+			absd->mFormatFlags,
+			(absd->mFormatFlags == kAudioFormatFlagIsBigEndian)?"Y":"N",
+			(absd->mFormatFlags == kAudioFormatFlagIsFloat)?"Y":"N",
+			(absd->mFormatFlags == kAudioFormatFlagIsNonInterleaved)?"Y":"N",
+			absd->mBytesPerPacket,
+			absd->mBytesPerFrame,
+			absd->mChannelsPerFrame,
+			absd->mBitsPerChannel
+			];
+}
+
++ (NSString *) stringFromAVAssetReaderAudioMixOutputOptionsDictionary:(NSDictionary *)optionsDictionary
+{
+	if(!optionsDictionary)
+		return nil;
+	
+	return [NSString stringWithFormat:@"\n"
+			"  Sample Rate:        %f\n"
+			"  Format ID:          %@\n"
+			"  Format Flags:       BigEndian: %s, IsFloat: %s, IsNonInterleaved: %s\n"
+			"  Channels per Frame: %d\n"
+			"  Bits per Channel:   %d",
+			[[optionsDictionary objectForKey:AVSampleRateKey] floatValue],
+			GetNSStringFrom4CharCode([[optionsDictionary objectForKey:AVFormatIDKey] intValue]),
+			[[optionsDictionary objectForKey:AVLinearPCMIsBigEndianKey] boolValue]?"Y":"N",
+			[[optionsDictionary objectForKey:AVLinearPCMIsFloatKey] boolValue]?"Y":"N",
+			[[optionsDictionary objectForKey:AVLinearPCMIsNonInterleaved] boolValue]?"Y":"N",
+			[[optionsDictionary objectForKey:AVNumberOfChannelsKey] intValue],
+			[[optionsDictionary objectForKey:AVLinearPCMBitDepthKey] intValue]
+			];
+}
+
++ (NSString *) stringFromAVAssetReaderStatus:(AVAssetReaderStatus)status
+{
+	switch(status){
+		case AVAssetReaderStatusUnknown:
+			return @"Unknown";
+			break;
+		case AVAssetReaderStatusReading:
+			return @"Reading";
+			break;
+		case AVAssetReaderStatusCompleted:
+			return @"Completed";
+			break;
+		case AVAssetReaderStatusFailed:
+			return @"Failed";
+			break;
+		case AVAssetReaderStatusCancelled:
+			return @"Cancelled";
+			break;
+		default:
+			return nil;
+			break;
 	}
 }
 
@@ -825,6 +1045,8 @@ done:
 		{
 			[audioSessionDelegate beginInterruption];
 		}
+		
+		[[NSNotificationCenter defaultCenter] postNotificationName:OALAudioSessionInterruptBeginNotification object:nil];
 	}
 }
 
@@ -847,6 +1069,8 @@ done:
 				[audioSessionDelegate endInterruption];
 			}
 		}
+		
+		[[NSNotificationCenter defaultCenter] postNotificationName:OALAudioSessionInterruptEndNotification object:nil];
 	}
 }
 

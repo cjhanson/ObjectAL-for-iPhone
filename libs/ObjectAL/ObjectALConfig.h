@@ -50,6 +50,17 @@
  */
 #define kActionStepInterval (1.0/30)
 
+/** Sets the number of buffers to create for AudioQueue players
+ * Note: Must be 2 or greater. Probably no reason to have more than 3.
+ * Recommended setting: 3
+ */
+#define OBJECTAL_CFG_AUDIO_QUEUE_NUM_BUFFERS 3
+
+/** Sets the buffer size for AudioQueue players
+ * Recommended setting: 0x8000 (32K)
+ */
+#define OBJECTAL_CFG_AUDIO_QUEUE_BUFFER_SIZE_BYTES 0x8000
+
 
 /** When this option is enabled, all critical ObjectAL operations will be wrapped in
  * synchronized blocks. <br>

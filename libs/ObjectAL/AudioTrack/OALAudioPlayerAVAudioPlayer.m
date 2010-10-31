@@ -47,9 +47,12 @@
 			[self release];
 			return nil;
 		}
+		
 		player.delegate = self;
 		
 		playerType = OALAudioPlayerTypeAVAudioPlayer;
+		state = OALPlayerStateNotReady;
+		status = OALPlayerStatusReadyToPlay;
 		
 		[self performSelector:@selector(postPlayerReadyNotification) withObject:nil afterDelay:0.01];
 	}
@@ -225,7 +228,21 @@
 
 - (OALPlayerStatus) status
 {
-	return OALPlayerStatusReadyToPlay;
+	return status;
+}
+
+/*!
+ @property state
+ @abstract
+ The current playback state
+ 
+ @discussion
+ The value of this property is an OALPlayerState that indicates the current playback state.
+ */
+
+- (OALPlayerState) state
+{
+	return state;
 }
 
 /*!

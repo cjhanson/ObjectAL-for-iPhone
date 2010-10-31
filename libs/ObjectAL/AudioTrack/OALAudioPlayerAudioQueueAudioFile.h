@@ -27,7 +27,8 @@
 #import "OALAudioPlayer.h"
 
 @interface OALAudioPlayerAudioQueueAudioFile : OALAudioPlayer {
-
+	OALPlayerStatus status;
+	OALPlayerState	state;
 }
 
 @end

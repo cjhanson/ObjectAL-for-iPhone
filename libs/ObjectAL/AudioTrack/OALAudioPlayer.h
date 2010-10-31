@@ -62,7 +62,7 @@ typedef NSInteger OALAudioPlayerType;
 /*!
  @enum OALPlayerStatus
  @abstract
- These constants are returned by the OALPlayer status property to indicate whether it can successfully play items.
+ These constants are returned by the OALPlayer status property to indicate whether it can successfully play.
  
  @constant	 OALPlayerStatusUnknown
  Indicates that the status of the player is not yet known because it has not tried to load new media resources for
@@ -80,8 +80,37 @@ enum {
 };
 typedef NSInteger OALPlayerStatus;
 
+/*!
+ @enum OALPlayerState
+ @abstract
+ These constants are used to keep track of the player's internal state
+ 
+ @constant OALPlayerStateClosed
+ The player does not have a track loaded
+ @constant OALPlayerStateNotReady
+ In cases where the player needs time between loading and ready to play this is the state it will be in.
+ @constant OALPlayerStateStopped
+ A player is stopped after a track is ready to play or after the track has finished playing
+ @constant OALPlayerStatePlaying
+ Playing
+ @constant OALPlayerStatePaused
+ Paused
+ @constant OALPlayerStateSeeking
+ Player is seeking to a new position
+ */
+enum {
+	OALPlayerStateClosed,
+	OALPlayerStateNotReady,
+	OALPlayerStateStopped,
+	OALPlayerStatePlaying,
+	OALPlayerStatePaused,
+	OALPlayerStateSeeking
+};
+typedef NSInteger OALPlayerState;
+
 @interface OALAudioPlayer : NSObject {
 	OALAudioPlayerType playerType;
+	BOOL suspended;
 	id<OALAudioPlayerDelegate> delegate;
 }
 
@@ -155,6 +184,16 @@ typedef NSInteger OALPlayerStatus;
 @property (nonatomic, readonly) OALPlayerStatus status;
 
 /*!
+ @property state
+ @abstract
+ The current playback state
+ 
+ @discussion
+ The value of this property is an OALPlayerState that indicates the current playback state.
+ */
+@property (nonatomic, readonly) OALPlayerState state;
+
+/*!
  @property error
  @abstract
  If the receiver's status is OALPlayerStatusFailed, this describes the error that caused the failure.
@@ -164,5 +203,12 @@ typedef NSInteger OALPlayerStatus;
  If the receiver's status is not OALPlayerStatusFailed, the value of this property is nil.
  */
 @property (nonatomic, readonly) NSError *error;
+
+#pragma mark Internal Use
+
+/** (INTERNAL USE) Used by the interrupt handler to suspend the audio device
+ * (if interrupts are enabled in OALAudioSupport).
+ */
+@property(readwrite,assign) bool suspended;
 
 @end

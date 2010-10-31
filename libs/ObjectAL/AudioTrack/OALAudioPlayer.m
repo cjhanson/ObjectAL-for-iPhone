@@ -60,6 +60,31 @@
 
 @synthesize playerType;
 
+- (NSString *) description
+{
+	return [NSString stringWithFormat:@""
+			"<%@ = %08X>\n"
+			"  Type:         %d\n"
+			"  URL:          %@\n"
+			"  Status:       %d\n"
+			"  State:        %d\n"
+			"  Playing:      %s\n"
+			"  CurrentTime:  %.2f\n"
+			"  Duration:     %.2f\n"
+			"  Loops:        %d",
+			[self class],
+			self,
+			self.playerType,
+			[self.url absoluteString],
+			self.status,
+			self.state,
+			self.isPlaying,
+			self.currentTime,
+			self.duration,
+			self.numberOfLoops
+			];
+}
+
 - (void) dealloc
 {
 	[super dealloc];
@@ -71,6 +96,7 @@
 	if(self){
 		delegate = nil;
 		playerType = OALAudioPlayerTypeInvalid;
+		suspended = NO;
 	}
 	return self;
 }
@@ -278,6 +304,21 @@
 }
 
 /*!
+ @property state
+ @abstract
+ The current playback state
+ 
+ @discussion
+ The value of this property is an OALPlayerState that indicates the current playback state.
+ */
+
+- (OALPlayerState) state
+{
+	[self doesNotRecognizeSelector:_cmd];
+	return OALPlayerStateNotReady;
+}
+
+/*!
  @property error
  @abstract
  If the receiver's status is OALPlayerStatusFailed, this describes the error that caused the failure.
@@ -290,6 +331,34 @@
 - (NSError *)error
 {
 	return [NSError errorWithDomain:@"OALAudioPlayer is abstract. Use a concrete subclass." code:1337 userInfo:nil];
+}
+
+#pragma mark Internal Use
+
+/** (INTERNAL USE) Used by the interrupt handler to suspend the audio device
+ * (if interrupts are enabled in OALAudioSupport).
+ */
+
+- (bool) suspended
+{
+	return suspended;
+}
+
+- (void) setSuspended:(bool) value
+{
+if(suspended != value)
+	{
+		suspended = value;
+		if(suspended)
+		{
+			//currentTime = player.currentTime;
+			[self stop];
+		}
+		else
+		{
+			
+		}
+	}
 }
 
 @end

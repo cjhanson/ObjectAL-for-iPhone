@@ -28,17 +28,18 @@
 #import "OALAudioPlayer.h"
 
 @interface OALAudioPlayerAVPlayer : OALAudioPlayer {
-	BOOL wasIPodAllowedBeforePlaybackStarted;
-	AVPlayer* player;
-	AVURLAsset* asset;
+	BOOL			wasIPodAllowedBeforePlaybackStarted;
+	AVPlayer		*player;
+	AVURLAsset		*asset;
 	
 	//Helpers
-	BOOL isPodSource;
-	NSURL *url;
-	float volume;
-	BOOL isPlaying;
-	NSInteger loopCount;
-	NSInteger numberOfLoops;
+	OALPlayerState	state;
+	BOOL			isPodSource;
+	NSURL			*url;
+	float			volume;
+	BOOL			isPlaying;
+	NSInteger		loopCount;
+	NSInteger		numberOfLoops;
 }
 
 @property (nonatomic, retain) AVPlayer *player;

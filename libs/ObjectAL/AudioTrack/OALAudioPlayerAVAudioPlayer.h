@@ -30,7 +30,9 @@
 #import "OALAudioPlayer.h"
 
 @interface OALAudioPlayerAVAudioPlayer : OALAudioPlayer <AVAudioPlayerDelegate> {
-	AVAudioPlayer* player;
+	OALPlayerStatus	status;
+	OALPlayerState	state;
+	AVAudioPlayer	*player;
 }
 
 @property (nonatomic, retain) AVAudioPlayer *player;

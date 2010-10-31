@@ -69,6 +69,7 @@
 			*outError			= nil;
 		
 		playerType = OALAudioPlayerTypeAVPlayer;
+		state = OALPlayerStateNotReady;
 		
 		url = [inUrl retain];
 		volume = 1.0f;
@@ -94,7 +95,8 @@
 {
 	if(numberOfLoops == -1 || numberOfLoops > loopCount){
 		loopCount++;
-		[self play];
+		[player setCurrentTime:0];
+		[player play];
 		return;
 	}
 	dispatch_async(dispatch_get_main_queue(), ^{
@@ -333,6 +335,20 @@
 			s = OALPlayerStatusUnknown;
 	}
 	return s;
+}
+
+/*!
+ @property state
+ @abstract
+ The current playback state
+ 
+ @discussion
+ The value of this property is an OALPlayerState that indicates the current playback state.
+ */
+
+- (OALPlayerState) state
+{
+	return state;
 }
 
 /*!

@@ -887,18 +887,16 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 		if(suspended != value)
 		{
 			suspended = value;
+			[player setSuspended:value];
 			if(suspended)
 			{
-				currentTime = player.currentTime;
-				[self stop];
+//				currentTime = player.currentTime;
+//				[self stop];
 			}
 			else
 			{
 				if(playing && !paused)
 				{
-	//				player.currentTime = currentTime;
-	//				playing = NO;
-	//				paused = NO;
 				}
 			}
 		}
