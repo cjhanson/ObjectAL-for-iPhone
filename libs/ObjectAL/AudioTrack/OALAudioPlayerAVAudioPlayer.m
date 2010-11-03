@@ -38,11 +38,11 @@
 	[super dealloc];
 }
 
-- (id)initWithContentsOfURL:(NSURL *)url error:(NSError **)outError
+- (id) initWithContentsOfURL:(NSURL *)inURL seekTime:(NSTimeInterval)inSeekTime error:(NSError **)outError
 {
 	self = [super init];
 	if(self){
-		player = [[AVAudioPlayer alloc] initWithContentsOfURL:url error:outError];
+		player = [[AVAudioPlayer alloc] initWithContentsOfURL:inURL error:outError];
 		if(!player){
 			[self release];
 			return nil;
@@ -54,21 +54,7 @@
 		state = OALPlayerStateNotReady;
 		status = OALPlayerStatusReadyToPlay;
 		
-		[self performSelector:@selector(postPlayerReadyNotification) withObject:nil afterDelay:0.01];
-	}
-	return self;
-}
-
-- (id)initWithData:(NSData *)data error:(NSError **)outError
-{
-	self = [super init];
-	if(self){
-		player = [[AVAudioPlayer alloc] initWithData:data error:outError];
-		player.delegate = self;
-		
-		playerType = OALAudioPlayerTypeAVAudioPlayer;
-		
-		[self performSelector:@selector(postPlayerReadyNotification) withObject:nil afterDelay:0.01];
+		self.currentTime = inSeekTime;
 	}
 	return self;
 }

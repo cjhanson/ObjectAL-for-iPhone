@@ -666,7 +666,7 @@ NSString *GetNSStringFromAudioQueueError(OSStatus errorCode)
 			return @"The property value used is not valid.";
 			break;
 		case kAudioQueueErr_PrimeTimedOut:
-			return @"During a call to the AudioQueuePrime function, the audio queue’s audio converter failed to convert the requested number of sample frames.";
+			return @"During a call to the AudioQueuePrime function, the audio queue's audio converter failed to convert the requested number of sample frames.";
 			break;
 		case kAudioQueueErr_CodecNotFound:
 			return @"The requested codec was not found.";
@@ -734,7 +734,7 @@ NSString *GetNSStringFrom4CharCode(unsigned long code)
 	return [NSString stringWithFormat:@"\n"
 			"  Sample Rate:        %f\n"
 			"  Format ID:          %@\n"
-			"  Format Flags:       %0x, BigEndian: %s, IsFloat: %s, IsNonInterleaved: %s\n"
+			"  Format Flags:       %08X, BigEndian: %s, IsFloat: %s, IsNonInterleaved: %s\n"
 			"  Bytes per Packet:   %d\n"
 			"  Frames per Packet:  %d\n"
 			"  Bytes per Frame:    %d\n"
@@ -743,17 +743,18 @@ NSString *GetNSStringFrom4CharCode(unsigned long code)
 			absd->mSampleRate,
 			GetNSStringFrom4CharCode(absd->mFormatID),
 			absd->mFormatFlags,
-			(absd->mFormatFlags == kAudioFormatFlagIsBigEndian)?"Y":"N",
-			(absd->mFormatFlags == kAudioFormatFlagIsFloat)?"Y":"N",
-			(absd->mFormatFlags == kAudioFormatFlagIsNonInterleaved)?"Y":"N",
+			((absd->mFormatFlags & kAudioFormatFlagIsBigEndian) == kAudioFormatFlagIsBigEndian)?"Y":"N",
+			((absd->mFormatFlags & kAudioFormatFlagIsFloat) == kAudioFormatFlagIsFloat)?"Y":"N",
+			((absd->mFormatFlags & kAudioFormatFlagIsNonInterleaved) == kAudioFormatFlagIsNonInterleaved)?"Y":"N",
 			absd->mBytesPerPacket,
+			absd->mFramesPerPacket,
 			absd->mBytesPerFrame,
 			absd->mChannelsPerFrame,
 			absd->mBitsPerChannel
 			];
 }
 
-+ (NSString *) stringFromAVAssetReaderAudioMixOutputOptionsDictionary:(NSDictionary *)optionsDictionary
++ (NSString *) stringFromAVAudioSettingsDictionary:(NSDictionary *)optionsDictionary
 {
 	if(!optionsDictionary)
 		return nil;

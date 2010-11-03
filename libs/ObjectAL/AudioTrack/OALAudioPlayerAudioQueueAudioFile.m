@@ -28,7 +28,7 @@
 
 @implementation OALAudioPlayerAudioQueueAudioFile
 
-- (id)initWithContentsOfURL:(NSURL *)inUrl error:(NSError **)outError
+- (id) initWithContentsOfURL:(NSURL *)inURL seekTime:(NSTimeInterval)inSeekTime error:(NSError **)outError
 {
 	self = [super init];
 	if(self){
@@ -38,13 +38,6 @@
 		[self performSelector:@selector(postPlayerReadyNotification) withObject:nil afterDelay:0.01];
 	}
 	return self;
-}
-
-- (id)initWithData:(NSData *)data error:(NSError **)outError
-{
-	[self doesNotRecognizeSelector:_cmd];
-	[self release];
-	return nil;
 }
 
 #pragma mark -

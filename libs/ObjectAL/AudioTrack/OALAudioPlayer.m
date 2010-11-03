@@ -31,6 +31,7 @@
 #import "OALAudioPlayerAVPlayer.h"
 #import "OALAudioPlayerAudioQueueAVAssetReader.h"
 #import "OALAudioPlayerAudioQueueAudioFile.h"
+#import "OALAudioPlayerAudioUnitAVAssetReader.h"
 
 @implementation OALAudioPlayer
 
@@ -50,6 +51,9 @@
 			break;
 		case OALAudioPlayerTypeAudioQueueAVAssetReader:
 			aClass = [OALAudioPlayerAudioQueueAVAssetReader class];
+			break;
+		case OALAudioPlayerTypeAudioUnitAVAssetReader:
+			aClass = [OALAudioPlayerAudioUnitAVAssetReader class];
 			break;
 		default:
 			aClass = [OALAudioPlayerAVAudioPlayer class];
@@ -101,23 +105,11 @@
 	return self;
 }
 
-- (id)initWithContentsOfURL:(NSURL *)url error:(NSError **)outError
+- (id) initWithContentsOfURL:(NSURL *)inURL seekTime:(NSTimeInterval)inSeekTime error:(NSError **)outError
 {
 	[self doesNotRecognizeSelector:_cmd];
 	[self release];
 	return nil;
-}
-
-- (id)initWithData:(NSData *)data error:(NSError **)outError
-{
-	[self doesNotRecognizeSelector:_cmd];
-	[self release];
-	return nil;
-}
-
-- (void) postPlayerReadyNotification
-{
-	[[NSNotificationCenter defaultCenter] postNotificationName:@"OALAudioPlayerReady" object:self];
 }
 
 - (void) setDelegate:(id <OALAudioPlayerDelegate>)d

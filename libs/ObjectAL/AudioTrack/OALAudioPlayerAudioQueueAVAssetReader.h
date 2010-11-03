@@ -53,9 +53,6 @@
 	
 	NSTimeInterval					seekTimeOffset;
 	
-	BOOL							isPodSource;
-	BOOL							wasIPodAllowedBeforePlaybackStarted;
-	
 	NSTimeInterval					positionBeforeInterruption;
 }
 
@@ -123,9 +120,9 @@ typedef struct CJDSP CJDSP;
 @property (nonatomic, readonly) AudioQueueRef queue;
 @property (nonatomic, readonly) UInt32 numPacketsToRead;
 
-@property (retain) AVAssetReader *audioReader;
-@property (retain) AVAssetReaderAudioMixOutput *audioReaderMixerOutput;
-@property (retain) AVAsset *audioAsset;
+@property (nonatomic, retain) AVAssetReader *audioReader;
+@property (nonatomic, retain) AVAssetReaderAudioMixOutput *audioReaderMixerOutput;
+@property (nonatomic, retain) AVAsset *audioAsset;
 
 - (BOOL)prepareToPlayAsset:(AVAsset *)anAsset;
 

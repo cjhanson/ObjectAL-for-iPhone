@@ -519,7 +519,7 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 		}
 		
 		// Only load if it's not the same URL as last time.
-		if([[url absoluteString] isEqualToString:[currentlyLoadedUrl absoluteString]])
+		if([[url path] isEqualToString:[currentlyLoadedUrl path]])
 		{
 			[self performSelector:@selector(postTrackSourceChangedNotification:) withObject:nil afterDelay:0.01];
 			return YES;
@@ -546,7 +546,7 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 			return NO;
 		}
 		
-		player = (OALAudioPlayer *)[[playerClass alloc] initWithContentsOfURL:url error:&error];
+		player = (OALAudioPlayer *)[[playerClass alloc] initWithContentsOfURL:url seekTime:seekTime error:&error];
 		
 		if(player == nil)
 		{
@@ -563,27 +563,19 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 		[currentlyLoadedUrl release];
 		currentlyLoadedUrl = [url retain];
 		
-		self.currentTime	= seekTime;
+		//Seek is not guaranteed to hit the exact requested time, so store whatever it ended up at
+		currentTime	= player.currentTime;
 		playing = NO;
 		paused = NO;
-
-		BOOL allOK = [player prepareToPlay];
-		if(!allOK)
-		{
-			OAL_LOG_ERROR(@"Failed to prepareToPlay: %@", url);
-		}
-		else
-		{
-			[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(postTrackSourceChangedNotification:) name:@"OALAudioPlayerReady" object:player];
-		}
-		return allOK;
+		
+		[self performSelector:@selector(postTrackSourceChangedNotification:) withObject:nil afterDelay:0.01];
+		
+		return YES;
 	}
 }
 
 - (void) postTrackSourceChangedNotification:(NSNotification *)notification
-{
-	[[NSNotificationCenter defaultCenter] removeObserver:self name:@"OALAudioPlayerReady" object:player];
-	
+{	
 	[[NSNotificationCenter defaultCenter] performSelectorOnMainThread:@selector(postNotification:) withObject:[NSNotification notificationWithName:OALAudioTrackSourceChangedNotification object:self] waitUntilDone:NO];
 }
 

@@ -1,8 +1,8 @@
 //
-//  OALAudioPlayerAVPlayer.h
+//  OALAudioPlayerAudioUnitAVAssetReader.h
 //  ObjectAL
 //
-//  Created by CJ Hanson on 29-OCT-2010
+//  Created by CJ Hanson on 02-NOV-2010
 //
 // Copyright 2010 CJ Hanson
 //
@@ -24,22 +24,15 @@
 // Attribution is not required, but appreciated :)
 //
 
-#import <AVFoundation/AVFoundation.h>
+#import "ObjectALConfig.h"
 #import "OALAudioPlayer.h"
+#import <AVFoundation/AVFoundation.h>
+#import <AudioToolbox/AudioToolbox.h>
+#import <CoreMedia/CoreMedia.h>
+#import <AudioUnit/AudioUnit.h>
 
-@interface OALAudioPlayerAVPlayer : OALAudioPlayer {
-	AVPlayer		*player;
-	AVURLAsset		*asset;
-	
-	//Helpers
-	OALPlayerState	state;
-	NSURL			*url;
-	float			volume;
-	BOOL			isPlaying;
-	NSInteger		loopCount;
-	NSInteger		numberOfLoops;
+@interface OALAudioPlayerAudioUnitAVAssetReader : OALAudioPlayer {
+
 }
-
-@property (nonatomic, retain) AVPlayer *player;
 
 @end

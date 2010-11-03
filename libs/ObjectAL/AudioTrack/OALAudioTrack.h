@@ -408,6 +408,8 @@
 
 #pragma mark Internal Use
 
+- (void) postTrackSourceChangedNotification:(NSNotification *)notification;
+
 /** (INTERNAL USE) Used by the interrupt handler to suspend the audio device
  * (if interrupts are enabled in OALAudioSupport).
  */

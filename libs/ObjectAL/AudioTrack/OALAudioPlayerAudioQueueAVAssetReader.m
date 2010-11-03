@@ -29,11 +29,12 @@
 #import "ObjectALMacros.h"
 
 #define CheckReaderStatus(__READER__) OAL_LOG_INFO(@"AVAssetReader Status: %@", [OALAudioSupport stringFromAVAssetReaderStatus:[(__READER__) status]]);
+#define CompareReaderStatus(__READER__, __STATUS__)  OAL_LOG_INFO(@"AVAssetReader Status: %@, Expected %@", [OALAudioSupport stringFromAVAssetReaderStatus:[(__READER__) status]], [OALAudioSupport stringFromAVAssetReaderStatus:(__STATUS__)]);
 
 @interface OALAudioPlayerAudioQueueAVAssetReader (PrivateMethods)
 - (BOOL)setupReaderAndOutput;
 - (BOOL)setupAudioQueue;
-- (void)prefetchBuffers;
+- (BOOL)prefetchBuffers;
 static void BufferCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBufferRef buffer);
 - (void)callbackForBuffer:(AudioQueueBufferRef)buffer;
 - (int)readPacketsIntoBuffer:(AudioQueueBufferRef)buffer;
@@ -47,7 +48,9 @@ static void audioQueuePropertyListenerCallback(void *inUserData, AudioQueueRef q
 - (void)dealloc
 {
 	[self close];
+	[url release];
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
+	
 	[super dealloc];
 }
 
@@ -55,14 +58,6 @@ static void audioQueuePropertyListenerCallback(void *inUserData, AudioQueueRef q
 {
 	if(state == OALPlayerStateClosed)
 		return;
-	
-	if(isPodSource){
-		[OALAudioSupport sharedInstance].allowIpod = wasIPodAllowedBeforePlaybackStarted;
-	}
-	isPodSource			= NO;
-	
-	[url release];
-	url					= nil;
 	
 	[assetReader cancelReading];
 	[assetReader release];
@@ -112,11 +107,11 @@ static void audioQueuePropertyListenerCallback(void *inUserData, AudioQueueRef q
 	OAL_LOG_INFO(@"audio queue player closed");
 }
 
-- (id)initWithContentsOfURL:(NSURL *)inUrl error:(NSError **)outError
+- (id) initWithContentsOfURL:(NSURL *)inURL seekTime:(NSTimeInterval)inSeekTime error:(NSError **)outError
 {
 	self = [super init];
 	if(self){
-		url						= [inUrl retain];
+		url						= [inURL retain];
 		playerType				= OALAudioPlayerTypeAudioQueueAVAssetReader;
 		state					= OALPlayerStateClosed;
 		status					= OALPlayerStatusUnknown;
@@ -132,10 +127,12 @@ static void audioQueuePropertyListenerCallback(void *inUserData, AudioQueueRef q
 		packetIndex				= 0;
 		seekTimeOffset			= 0.0;
 		
-		isPodSource				= [[url scheme] isEqualToString:@"ipod-library"];
+		if([inURL.scheme isEqualToString:@"ipod-library"] && ![OALAudioSupport sharedInstance].allowIpod){
+			OAL_LOG_WARNING(@"source is iPod but iPod mixing is not allowed. Set your category to allow mixing.");
+		}
 		
 		NSDictionary *options	= nil;//[NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES] forKey:AVURLAssetPreferPreciseDurationAndTimingKey];
-		asset					= [[AVURLAsset alloc] initWithURL:inUrl options:options];
+		asset					= [[AVURLAsset alloc] initWithURL:inURL options:options];
 		if(!asset){
 			if(outError)
 				*outError		= [NSError errorWithDomain:@"AudioQueuePlayer failed with AVURLAsset" code:-1 userInfo:nil];
@@ -143,63 +140,47 @@ static void audioQueuePropertyListenerCallback(void *inUserData, AudioQueueRef q
 			return nil;
 		}
 		
-		OAL_LOG_INFO(@"Asset duration: %.2f", CMTimeGetSeconds(asset.duration));
-		
-		state					= OALPlayerStateNotReady;
-		
-		[self performSelector:@selector(postPlayerReadyNotification) withObject:nil afterDelay:0.01];
-		
 		if(outError)
 			*outError			= nil;
+		
+		if(![self setupReaderAndOutput]){
+			[self close];
+			if(outError)
+				*outError		= [NSError errorWithDomain:@"AudioQueuePlayer Setup Reader/Output failed" code:-1 userInfo:nil];
+			[self release];
+			return nil;
+		}
+		
+		if(![self setupAudioQueue]){
+			[self close];
+			if(outError)
+				*outError		= [NSError errorWithDomain:@"AudioQueuePlayer AudioQueue setup failed" code:-1 userInfo:nil];
+			[self release];
+			return nil;
+		}
+		
+		status			= OALPlayerStatusReadyToPlay;
+		state			= OALPlayerStateStopped;
+		
+		self.currentTime		= inSeekTime;
+		/*
+		__block BOOL fetchedBuffers		= NO;
+		
+		dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, NULL), ^{
+			fetchedBuffers		= [self prefetchBuffers];
+		});
+		
+		if(!fetchedBuffers){
+			[self close];
+			if(outError)
+				*outError		= [NSError errorWithDomain:@"AudioQueuePlayer AudioQueue setup failed" code:-1 userInfo:nil];
+			[self release];
+			return nil;
+		}
+		*/
+		OAL_LOG_INFO(@"Asset duration: %.2f seek time: %.2f actual %.2f", CMTimeGetSeconds(asset.duration), inSeekTime, self.currentTime);
 	}
 	return self;
-}
-
-- (id)initWithData:(NSData *)data error:(NSError **)outError
-{
-	[self doesNotRecognizeSelector:_cmd];
-	[self release];
-	return nil;
-}
-
-#pragma mark -
-#pragma mark Prepare AVAsset
-
-- (BOOL)prepareToPlay
-{
-	if(asset == nil){
-		OAL_LOG_ERROR(@"Abort prepareToPlay. AVAsset is nil.");
-		return NO;
-	}
-	
-	if(state != OALPlayerStateClosed){
-		OAL_LOG_INFO(@"Closing track before prepare to play.");
-		AVURLAsset *anAsset	= [asset retain];
-		[self close];
-		asset				= anAsset;
-	}
-	
-	if(isPodSource){
-		wasIPodAllowedBeforePlaybackStarted = [OALAudioSupport sharedInstance].allowIpod;
-		[OALAudioSupport sharedInstance].allowIpod = YES;
-	}
-	
-	if(![self setupReaderAndOutput]){
-		OAL_LOG_ERROR(@"Abort prepareToPlay. Setup Reader/Output failed.");
-		[self close];
-		return NO;
-	}
-	
-	if(![self setupAudioQueue]){
-		OAL_LOG_ERROR(@"Abort prepareToPlay. Failed to setup Audio Queue.");
-		[self close];
-		return NO;
-	}
-	
-	status			= OALPlayerStatusReadyToPlay;
-	state			= OALPlayerStateStopped;
-	
-	return YES;
 }
 
 #pragma mark -
@@ -211,11 +192,13 @@ static void audioQueuePropertyListenerCallback(void *inUserData, AudioQueueRef q
 		return NO;
 	}
 	
-	if([asset.tracks count] < 1){
+	NSArray *tracks = [asset tracksWithMediaType:AVMediaTypeAudio];
+	
+	if([tracks count] < 1){
 		OAL_LOG_ERROR(@"AVAsset has no tracks");
 		return NO;
 	}
-	if([asset.tracks count] > 1){
+	if([tracks count] > 1){
 		OAL_LOG_WARNING(@"AVAsset has more than one track");
 	}
 	
@@ -249,20 +232,21 @@ static void audioQueuePropertyListenerCallback(void *inUserData, AudioQueueRef q
 	
 	OAL_LOG_INFO(@"ABSD:\n%@", [OALAudioSupport stringFromAudioStreamBasicDescription:&dataFormat]);
 	
-	NSDictionary *optionsDictionary	= [[NSDictionary alloc] initWithObjectsAndKeys:
-									   [NSNumber numberWithFloat:(float)dataFormat.mSampleRate],	AVSampleRateKey,
-									   [NSNumber numberWithInt:dataFormat.mFormatID],				AVFormatIDKey,
-									   [NSNumber numberWithBool:(dataFormat.mFormatFlags == kAudioFormatFlagIsBigEndian)],		AVLinearPCMIsBigEndianKey,
-									   [NSNumber numberWithBool:(dataFormat.mFormatFlags == kAudioFormatFlagIsFloat)],			AVLinearPCMIsFloatKey,
-									   [NSNumber numberWithBool:(dataFormat.mFormatFlags == kAudioFormatFlagIsNonInterleaved)],	AVLinearPCMIsNonInterleaved,
-									   [NSNumber numberWithInt:dataFormat.mChannelsPerFrame],		AVNumberOfChannelsKey,
-									   [NSNumber numberWithInt:dataFormat.mBitsPerChannel],			AVLinearPCMBitDepthKey,
-									   nil];
+	NSDictionary *optionsDictionary	=
+	  [[NSDictionary alloc] initWithObjectsAndKeys:
+	    [NSNumber numberWithFloat:(float)dataFormat.mSampleRate],	AVSampleRateKey,
+	    [NSNumber numberWithInt:dataFormat.mFormatID],				AVFormatIDKey,
+	    [NSNumber numberWithBool:((dataFormat.mFormatFlags & kAudioFormatFlagIsBigEndian) == kAudioFormatFlagIsBigEndian)],				AVLinearPCMIsBigEndianKey,
+	    [NSNumber numberWithBool:((dataFormat.mFormatFlags & kAudioFormatFlagIsFloat) == kAudioFormatFlagIsFloat)],						AVLinearPCMIsFloatKey,
+	    [NSNumber numberWithBool:((dataFormat.mFormatFlags & kAudioFormatFlagIsNonInterleaved) == kAudioFormatFlagIsNonInterleaved)],	AVLinearPCMIsNonInterleaved,
+	    [NSNumber numberWithInt:dataFormat.mChannelsPerFrame],		AVNumberOfChannelsKey,
+	    [NSNumber numberWithInt:dataFormat.mBitsPerChannel],		AVLinearPCMBitDepthKey,
+	   nil];
 	
-	OAL_LOG_INFO(@"AVAssetReaderAudioMixOutput Options:\n%@", [OALAudioSupport stringFromAVAssetReaderAudioMixOutputOptionsDictionary:optionsDictionary]);
+	OAL_LOG_INFO(@"AVAssetReaderAudioMixOutput Options:\n%@", [OALAudioSupport stringFromAVAudioSettingsDictionary:optionsDictionary]);
 	
 	// Create our AVAssetReaderOutput subclass with our options
-	assetReaderMixerOutput			= [[AVAssetReaderAudioMixOutput alloc] initWithAudioTracks:[asset tracks] audioSettings:optionsDictionary];
+	assetReaderMixerOutput			= [[AVAssetReaderAudioMixOutput alloc] initWithAudioTracks:tracks audioSettings:optionsDictionary];
 	
 	[optionsDictionary release];
 	
@@ -296,27 +280,6 @@ static void audioQueuePropertyListenerCallback(void *inUserData, AudioQueueRef q
 		return NO;
 	}
 	
-	// Should be unknown before startReading is called
-	CheckReaderStatus(assetReader);
-	
-	if(![assetReader startReading]){
-		OAL_LOG_ERROR(@"AVAssetReader cannot start reading. %@",[assetReader.error localizedDescription]);
-		
-		CheckReaderStatus(assetReader);
-		
-		dataFormat	= (AudioStreamBasicDescription){0};
-		
-		[assetReader release];
-		assetReader = nil;
-		
-		[assetReaderMixerOutput release];
-		assetReaderMixerOutput = nil;
-		
-		return NO;
-	}
-	
-	CheckReaderStatus(assetReader);
-	
 	return YES;
 }
 
@@ -330,14 +293,23 @@ static void audioQueuePropertyListenerCallback(void *inUserData, AudioQueueRef q
 	// create a new playback queue using the specified data format and buffer callback
 	//param #4 and 5 set to NULL means AudioQueue will use it's own threads runloop with the CommonModes
 	audioError	= AudioQueueNewOutput(&dataFormat, BufferCallback, self, NULL, NULL, 0, &queue);
-	REPORT_AUDIO_QUEUE_CALL(audioError, @"AudioQueueNewOutput");
+	if(audioError != noErr){
+		REPORT_AUDIO_QUEUE_CALL(audioError, @"AudioQueueNewOutput");
+		return NO;
+	}
 	
 	audioError	= AudioQueueCreateTimeline(queue, &queueTimeline);
-	REPORT_AUDIO_QUEUE_CALL(audioError, @"AudioQueueCreateTimeline");
+	if(audioError != noErr){
+		REPORT_AUDIO_QUEUE_CALL(audioError, @"AudioQueueCreateTimeline");
+		return NO;
+	}
 	
 	UInt32 hardwarePolicy = (UInt32)kAudioQueueHardwareCodecPolicy_PreferHardware;
 	audioError = AudioQueueSetProperty(queue, kAudioQueueProperty_HardwareCodecPolicy, (const void *)&hardwarePolicy, sizeof(UInt32));
-	REPORT_AUDIO_QUEUE_CALL(audioError, @"AudioQueueSetProperty: HardwareCodecPolicy");
+	if(audioError != noErr){
+		REPORT_AUDIO_QUEUE_CALL(audioError, @"AudioQueueSetProperty: HardwareCodecPolicy");
+		return NO;
+	}
 	
 	// for CBR data (Constant BitRate), we can simply fill each buffer with as many packets as will fit
 	numPacketsToRead = OBJECTAL_CFG_AUDIO_QUEUE_BUFFER_SIZE_BYTES / dataFormat.mBytesPerPacket;
@@ -346,39 +318,57 @@ static void audioQueuePropertyListenerCallback(void *inUserData, AudioQueueRef q
 	
 	// we want to know when the playing state changes so we can properly dispose of the audio queue when it's done
 	audioError	= AudioQueueAddPropertyListener(queue, kAudioQueueProperty_IsRunning, audioQueuePropertyListenerCallback, self);
-	REPORT_AUDIO_QUEUE_CALL(audioError, @"AudioQueueAddPropertyListener: IsRunning");
+	if(audioError != noErr){
+		REPORT_AUDIO_QUEUE_CALL(audioError, @"AudioQueueAddPropertyListener: IsRunning");
+		return NO;
+	}
 	
 	// allocate the play buffers
 	for(int i = 0; i < OBJECTAL_CFG_AUDIO_QUEUE_NUM_BUFFERS; i++){
 		audioError	= AudioQueueAllocateBuffer(queue, OBJECTAL_CFG_AUDIO_QUEUE_BUFFER_SIZE_BYTES, &buffers[i]);
-		REPORT_AUDIO_QUEUE_CALL(audioError, @"AudioQueueAllocateBuffer: %d", i);
+		if(audioError != noErr){
+			REPORT_AUDIO_QUEUE_CALL(audioError, @"AudioQueueAllocateBuffer: %d", i);
+			return NO;
+		}
 	}
 	
 	return YES;
 }
 
-- (void) prefetchBuffers
+- (BOOL) prefetchBuffers
 {
 	OAL_LOG_INFO(@"AudioQueue prefetching buffers");
 	if(assetReader.status != AVAssetReaderStatusReading){
 		if(![assetReader startReading]){
 			OAL_LOG_ERROR(@"AVAssetReader failed to start reading: %@", [assetReader.error localizedDescription]);
-			return;
+			return NO;
 		}
 	}
 	
+	CompareReaderStatus(assetReader, AVAssetReaderStatusReading);
+	
 	for(int i = 0; i < OBJECTAL_CFG_AUDIO_QUEUE_NUM_BUFFERS; i++){
 		if([self readPacketsIntoBuffer:buffers[i]] < 1){
-			//			if(isLooping){
-			// End Of File reached, so rewind and refill the buffer using the beginning of the file instead
-			//				packetIndex = 0;
-			//[self readPacketsIntoBuffer:buffers[i]];
-			//			}else{
 			// this might happen if the file was so short that it needed less buffers than we planned on using
 			break;
-			//			}
 		}
 	}
+	
+	OSStatus audioError;
+	
+	UInt32 inNumberOfFramesToPrepare = numPacketsToRead;//0 means all
+	UInt32 outNumberOfFramesPrepared;
+	audioError = AudioQueuePrime(queue, inNumberOfFramesToPrepare, &outNumberOfFramesPrepared);	
+	if(audioError != noErr){
+		REPORT_AUDIO_QUEUE_CALL(audioError, @"play -> AudioQueuePrime");
+		return NO;
+	}else{
+		OAL_LOG_INFO(@"AudioQueue inFramesToPrepare: %d outFramesPrepared: %d", inNumberOfFramesToPrepare, outNumberOfFramesPrepared);
+	}
+	
+	OAL_LOG_INFO(@"Finished prefetching and priming buffers");
+	
+	return YES;
 }
 
 static void BufferCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBufferRef buffer)
@@ -404,8 +394,6 @@ static void BufferCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 	if(readCount == 0){
 		if(loopCount < numberOfLoops){
 			OAL_LOG_INFO(@"Reached end of buffer, but isLooping, so reset packetIndex and read more packets into buffer");
-			[self performSelectorOnMainThread:@selector(postTrackLoopedNotification:) withObject:nil waitUntilDone:NO];
-			
 			// End Of File reached, so rewind and refill the buffer using the beginning of the file instead
 			self.currentTime = 0;
 			[self readPacketsIntoBuffer:buffer];
@@ -429,6 +417,7 @@ static void BufferCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 	}
 	
 	if([assetReader status] == AVAssetReaderStatusCompleted){
+		OAL_LOG_INFO(@"Stopped reading packets into buffer because reader status is completed.");
 		return 0;
 	}
 	if([assetReader status] != AVAssetReaderStatusReading){
@@ -436,15 +425,12 @@ static void BufferCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 		return -1;
 	}
 	
-	NSAutoreleasePool *pool = [NSAutoreleasePool new];	
+	NSAutoreleasePool *pool = [NSAutoreleasePool new];
 	
-	int audioBPS			= (float)(dataFormat.mSampleRate * dataFormat.mBitsPerChannel * dataFormat.mChannelsPerFrame)/8;
-	NSTimeInterval playTime	= NSTimeInterval(numPacketsToRead * dataFormat.mBytesPerPacket)/audioBPS;
+	OAL_LOG_INFO(@"Reading %d packets at %lld Time %f", numPacketsToRead, packetIndex, (float)(packetIndex/dataFormat.mSampleRate));
 	
-	UInt32		numBytes, numPackets;
+	UInt32		numBytes;
 	OSStatus	audioError = noErr;
-	// read packets into buffer from file
-	numPackets	= numPacketsToRead;
 	
 #pragma mark AVAsset to audio Queue	
 	CMSampleBufferRef myBuff;
@@ -453,14 +439,14 @@ static void BufferCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 	CFAllocatorRef structAllocator = NULL;
 	CFAllocatorRef memoryAllocator = NULL;
 	
-	UInt32 myFlags = 0;
-	
 	myBuff = [assetReaderMixerOutput copyNextSampleBuffer];
 	if(!myBuff){
+		OAL_LOG_INFO(@"Stopped reading packets into buffer because reader returned a null buffer");
 		[pool drain];
 		return 0;
 	}
 	
+	UInt32 myFlags = 0;
 	size_t sizeNeeded;
 	audioError = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
 					 myBuff,
@@ -476,9 +462,21 @@ static void BufferCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 	
 	if(audioError != noErr){
 		OAL_LOG_ERROR(@"CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer %d", audioError);
+		CFRelease(blockBufferOut);
+		[pool drain];
+		return -1;
 	}
 	
-	size_t dataLength	= MIN(buffer->mAudioDataBytesCapacity, CMBlockBufferGetDataLength(blockBufferOut));
+	size_t blockBufferOutLength	= CMBlockBufferGetDataLength(blockBufferOut);
+	size_t dataLength			= MIN(buffer->mAudioDataBytesCapacity, blockBufferOutLength);
+	
+	if(dataLength < 1){
+		OAL_LOG_ERROR(@"Stopped reading packets into buffer because read data length is 0. (cap: %d, len: %d)", buffer->mAudioDataBytesCapacity, blockBufferOutLength);
+		CFRelease(blockBufferOut);
+		[pool drain];
+		return -1;
+	}
+	
 	numBytes			= dataLength;
 	audioError			= CMBlockBufferCopyDataBytes(
 							blockBufferOut,
@@ -490,20 +488,24 @@ static void BufferCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 	
 	if(audioError != noErr){
 		OAL_LOG_ERROR(@"CMBlockBufferCopyDataBytes %d", audioError);
+		[pool drain];
+		return -1;
 	}
 	
 	buffer->mAudioDataByteSize = numBytes;
 	audioError	= AudioQueueEnqueueBuffer(queue, buffer, 0, NULL);
 	
 	if(audioError != noErr){
-		OAL_LOG_ERROR(@"readPacketsIntoBuffer, AudioQueueEnqueueBuffer %d", audioError);
+		REPORT_AUDIO_QUEUE_CALL(audioError, @"AudioQueueEnqueueBuffer");
+		[pool drain];
+		return -1;
 	}
 	
 	[pool drain];
 	
-	packetIndex += numPackets;
+	packetIndex += numPacketsToRead;
 	
-	return numPackets;
+	return numPacketsToRead;
 }
 
 static void audioQueuePropertyListenerCallback(void *inUserData, AudioQueueRef queueObject, AudioQueuePropertyID propertyID)
@@ -523,7 +525,7 @@ static void audioQueuePropertyListenerCallback(void *inUserData, AudioQueueRef q
 - (void)playBackIsRunningStateChanged:(NSNumber *)isRunningN
 {
 	BOOL isRunning	= [isRunningN boolValue];
-	OAL_LOG_INFO(@"playBackIsRunningStateChanged: %s and trackEnded: %s", isRunning?"Playing":"Stopped", trackEnded?"Y":"N");
+	OAL_LOG_INFO(@"playBackIsRunningStateChanged: playing: %s and trackEnded: %s", isRunning?"Y":"N", trackEnded?"Y":"N");
 	if(isRunning == NO){
 		//stopped
 		if(trackEnded){
@@ -532,7 +534,7 @@ static void audioQueuePropertyListenerCallback(void *inUserData, AudioQueueRef q
 //TODO: notifications
 //			[self postTrackStoppedPlayingNotification:nil];
 //			[self postTrackFinishedPlayingNotification:nil];
-			
+			OAL_LOG_INFO(@"Closing player");
 			// go ahead and close the track now
 			[self close];
 		}
@@ -555,29 +557,30 @@ static void audioQueuePropertyListenerCallback(void *inUserData, AudioQueueRef q
 		return NO;
 	}
 	
-	if(state == OALPlayerStateNotReady){
-		if(![self prepareToPlay]){
-			OAL_LOG_ERROR(@"play -> prepareToPlay");
-			return NO;
-		}
-	}
-	
 	if(state == OALPlayerStatePlaying){
+		OAL_LOG_INFO(@"Already playing");
 		return YES;
 	}
 	
-	if(state == OALPlayerStateStopped || state == OALPlayerStateSeeking)
-		[self prefetchBuffers];
+	CheckReaderStatus(assetReader);
 	
-	OSStatus audioError;
-	
-	if(state != OALPlayerStatePaused){
-		audioError = AudioQueuePrime(queue, 1, nil);	
-		if(audioError != noErr){
-			REPORT_AUDIO_QUEUE_CALL(audioError, @"play -> AudioQueuePrime");
+	if([assetReader status] != AVAssetReaderStatusReading){
+		OAL_LOG_INFO(@"AVAssetReader wasn't reading. Start reading.");
+		if(![assetReader startReading]){
+			OAL_LOG_ERROR(@"AVAssetReader cannot start reading. %@",[assetReader.error localizedDescription]);
 			return NO;
 		}
+		
+		
+		OAL_LOG_INFO(@"Prefetch audio queue buffers");
+		if(![self prefetchBuffers]){
+			OAL_LOG_ERROR(@"Failed to play because could not prefetch buffers.");
+			return NO;
+		}
+		
 	}
+
+	OSStatus audioError;
 	
 	audioError = AudioQueueStart(queue, NULL);
 	if(audioError != noErr){
@@ -684,13 +687,15 @@ static void audioQueuePropertyListenerCallback(void *inUserData, AudioQueueRef q
 //TODO: Figure out seek and current time
 - (void) setCurrentTime:(NSTimeInterval)t
 {
-	if(state == OALPlayerStateClosed)
+	if(state == OALPlayerStateClosed){
+		OAL_LOG_ERROR(@"Cannot set current time when player is closed.");
 		return;
+	}
 	
-	if(state != OALPlayerStateNotReady){
-		OAL_LOG_ERROR(@"Cannot set current time when the player is ready. The time must be set before playback.");
+	if([assetReader status] != AVAssetReaderStatusUnknown){
+		OAL_LOG_ERROR(@"Cannot set current time when the AVAssetReader is ready. The time must be set before reading begins.");
 		return;
-	}	
+	}
 	
 	CMTime startTime		= CMTimeMakeWithSeconds(t, 1);
 	CMTime playDuration		= kCMTimePositiveInfinity;
@@ -702,6 +707,9 @@ static void audioQueuePropertyListenerCallback(void *inUserData, AudioQueueRef q
 {
 	if(state == OALPlayerStateClosed)
 		return 0;
+	
+//	if(state != OALPlayerStatePlaying)
+//		return (NSTimeInterval) packetIndex / (NSTimeInterval) dataFormat.mSampleRate;
 	
 	//CMTime readerTime		= CMTimeGetSeconds(assetReader.timeRange.start);
 	
@@ -715,10 +723,16 @@ static void audioQueuePropertyListenerCallback(void *inUserData, AudioQueueRef q
 													);
 	if(audioError != noErr){
 		currentTime.mSampleTime	= -1.0;
-		REPORT_AUDIO_QUEUE_CALL(audioError, @"getCurrentTime AudioQueueGetCurrentTime");
-		return 0;
+		REPORT_AUDIO_QUEUE_CALL(audioError, @"AudioQueueGetCurrentTime");
+		
+		UInt32 isRunningVal;
+		UInt32 size	= sizeof(isRunningVal);
+		OSStatus readPropOK	= AudioQueueGetProperty(queue, kAudioQueueProperty_IsRunning, &isRunningVal, &size);
+		REPORT_AUDIO_QUEUE_CALL(readPropOK, @"AudioQueueGetProperty IsRunning");
+		OAL_LOG_INFO(@"Queue is running? %s", (isRunningVal==1)?"Y":"N");
+		return (NSTimeInterval) packetIndex / (NSTimeInterval) dataFormat.mSampleRate;
 	}
-	return dataFormat.mSampleRate / currentTime.mSampleTime;
+	return currentTime.mSampleTime / dataFormat.mSampleRate;
 }
 
 - (NSTimeInterval) deviceCurrentTime
@@ -825,6 +839,7 @@ static void audioQueuePropertyListenerCallback(void *inUserData, AudioQueueRef q
 	if(suspended != value){
 		suspended = value;
 		if(suspended){
+#if 0
 			if(state != OALPlayerStateClosed){
 				OAL_LOG_INFO(@"Session Interrupted an open AudioQueue Player, saving position, shutting down audio queue.");
 
@@ -856,11 +871,16 @@ static void audioQueuePropertyListenerCallback(void *inUserData, AudioQueueRef q
 			}else{
 				OAL_LOG_ERROR(@"AudioQueue player failed to prepare to play in audio session restore.");
 			}
+#endif
 		}
 	}
 }
 
 @end
+
+#pragma mark -
+#pragma mark -
+#pragma mark -
 
 #if 0
 
@@ -1084,7 +1104,7 @@ void (^CheckReaderStatus)(AVAssetReader*) = ^(AVAssetReader *theReader)
 	AVAssetReaderAudioMixOutput *mixOutput = [[AVAssetReaderAudioMixOutput alloc] initWithAudioTracks:[anAsset tracks] audioSettings:optionsDictionary];
 	
 	if(!mixOutput){
-		NSLog(@"Could not initialize the AVAssetReaderTrackOutput.");
+		NSLog(@"Could not initialize the AVAssetReaderAudioMixOutput.");
 		
 		[assetReader release];
 		[mixOutput release];
@@ -1182,7 +1202,7 @@ void (^CheckReaderStatus)(AVAssetReader*) = ^(AVAssetReader *theReader)
 		  dataFormat.mBytesPerPacket,
 		  (dataFormat.mBytesPerPacket == 0)?"Y":"N",
 		  dataFormat.mFramesPerPacket,
-		  (dataFormat.mFormatFlags & kAudioFormatFlagIsFloat)?"Float":"SInt"
+		  ((dataFormat.mFormatFlags & kAudioFormatFlagIsFloat)==kAudioFormatFlagIsFloat)?"Float":"SInt"
 		  );
 	
 	//get duration

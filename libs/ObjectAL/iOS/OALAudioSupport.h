@@ -288,7 +288,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS_HEADER(OALAudioSupport);
  *
  * @param optionsDictionary: NSDictionary with proper keys to be used with AVAssetReaderAudioMixOutput
  */
-+ (NSString *) stringFromAVAssetReaderAudioMixOutputOptionsDictionary:(NSDictionary *)optionsDictionary;
++ (NSString *) stringFromAVAudioSettingsDictionary:(NSDictionary *)optionsDictionary;
 
 /** Get a pretty description from an AVAssetReaderStatus
  *

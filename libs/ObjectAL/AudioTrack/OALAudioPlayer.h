@@ -53,9 +53,10 @@ enum {
 	OALAudioPlayerTypeAVPlayer,
 	OALAudioPlayerTypeAudioQueueAVAssetReader,
 	OALAudioPlayerTypeAudioQueueAudioFile,
+	OALAudioPlayerTypeAudioUnitAVAssetReader,
 	
 	//! Default
-	OALAudioPlayerTypeDefault = OALAudioPlayerTypeAudioQueueAVAssetReader
+	OALAudioPlayerTypeDefault = OALAudioPlayerTypeAVPlayer
 };
 typedef NSInteger OALAudioPlayerType;
 
@@ -116,7 +117,7 @@ typedef NSInteger OALPlayerState;
 
 + (Class) getClassForPlayerType:(OALAudioPlayerType)aPlayerType;
 
-- (void) postPlayerReadyNotification;
+- (id) initWithContentsOfURL:(NSURL *)inURL seekTime:(NSTimeInterval)inSeekTime error:(NSError **)outError;
 
 /* transport control */
 /* methods that return BOOL return YES on success and NO on failure. */
