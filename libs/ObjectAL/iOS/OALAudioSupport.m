@@ -683,7 +683,7 @@ NSString *GetNSStringFromAudioQueueError(OSStatus errorCode)
 #ifdef __IPHONE_3_1
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_3_1
 		case kAudioQueueErr_InvalidOfflineMode:
-			return @"The operation requires the audio queue to be in offline mode but it isn’t, or vice versa.\nTo use offline mode or to return to normal mode, use the AudioQueueSetOfflineRenderFormat function.";
+			return @"The operation requires the audio queue to be in offline mode but it isn't, or vice versa.\nTo use offline mode or to return to normal mode, use the AudioQueueSetOfflineRenderFormat function.";
 			break;
 		case kAudioFormatUnsupportedDataFormatError:
 			return @"The playback data format is unsupported (declared in AudioFormat.h).";
@@ -1087,6 +1087,19 @@ static void interruptListenerCallback(void* inUserData, UInt32 interruptionState
 			[handler onInterruptEnd];
 			break;
 	}
+}
+
+/**
+ * This method is used to work around various bugs introduced in 4.x OS versions. In some circumstances the 
+ * audio session is interrupted but never resumed, this results in the loss of OpenAL audio when following 
+ * standard practices. If we detect this situation then we will attempt to resume the audio session ourselves.
+ * Known triggers: lock the device then unlock it (iOS 4.2 gm), playback a song using MPMediaPlayer (iOS 4.0)
+ */
+- (void) badAlContextHandler {
+	if(handleInterruptions && audioSessionWasActive && !audioSessionActive && alcGetCurrentContext() == NULL) {
+		OAL_LOG_INFO(@"bad OpenAL context detected. The situation occurs when the audio session is interrupted but never ends the interruption?");
+		[self onInterruptEnd];
+	}	
 }
 
 @end

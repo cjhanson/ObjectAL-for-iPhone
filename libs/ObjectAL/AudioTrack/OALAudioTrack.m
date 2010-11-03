@@ -794,6 +794,11 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 	}
 }
 
+- (void) close
+{
+	[self clear];
+}
+
 - (void) clear
 {
 	OPTIONALLY_SYNCHRONIZED(self)
@@ -804,13 +809,15 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 		
 		[player stop];
 		[player release];
+		player = nil;
+		
 		if(playing)
 		{
 			[[NSNotificationCenter defaultCenter] performSelectorOnMainThread:@selector(postNotification:) withObject:[NSNotification notificationWithName:OALAudioTrackStoppedPlayingNotification object:self] waitUntilDone:NO];
 		}
 		
 		self.currentTime = 0;
-		player = nil;
+		
 		playing = NO;
 		paused = NO;
 		muted = NO;

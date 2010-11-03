@@ -365,6 +365,9 @@
 /** Unload and clear all audio data, stop playing, and stop all operations.
  */
 - (void) clear;
+/** Alias to clear
+ */
+- (void) close;
 
 #pragma mark Metering
 

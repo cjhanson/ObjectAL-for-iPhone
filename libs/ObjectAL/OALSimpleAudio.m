@@ -377,6 +377,11 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(OALSimpleAudio);
 	[backgroundTrack stop];
 }
 
+- (void) closeBg
+{
+	[backgroundTrack close];
+}
+
 
 #pragma mark Sound Effects
 

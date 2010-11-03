@@ -296,4 +296,9 @@ SYNTHESIZE_SINGLETON_FOR_CLASS_HEADER(OALAudioSupport);
  */
 + (NSString *) stringFromAVAssetReaderStatus:(AVAssetReaderStatus)status;
 
+
+/** (INTERNAL USE) Workaround for iOS 4.x bug
+ */
+- (void) badAlContextHandler;
+
 @end

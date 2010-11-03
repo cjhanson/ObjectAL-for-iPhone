@@ -289,6 +289,10 @@ SYNTHESIZE_SINGLETON_FOR_CLASS_HEADER(OALSimpleAudio);
  */
 - (void) stopBg;
 
+/** Stop and close the background music
+ */
+- (void) closeBg;
+
 
 #pragma mark Sound Effects
 
