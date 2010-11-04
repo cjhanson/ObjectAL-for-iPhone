@@ -889,7 +889,9 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 			[player setSuspended:value];
 			if(suspended)
 			{
-//				currentTime = player.currentTime;
+				currentTime = player.currentTime;
+				paused = NO;
+				playing = NO;
 //				[self stop];
 			}
 			else

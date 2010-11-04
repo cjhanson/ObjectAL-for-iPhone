@@ -45,6 +45,7 @@
 {
 	self = [super init];
 	if(self){
+		//I don't know why but passing this option enabled will cause the time to progress but no sound to output.
 		NSDictionary *options	= nil;//[NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES] forKey:AVURLAssetPreferPreciseDurationAndTimingKey];
 		asset					= [[AVURLAsset alloc] initWithURL:inURL options:options];
 		if(!asset){
@@ -77,6 +78,8 @@
 		loopCount = 0;
 		
 		self.currentTime		= inSeekTime;
+//		CMTime cTime = CMTimeMakeWithSeconds(120, 1);
+//		[player seekToTime:cTime toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero];
 		
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onAVPlayerItemDidPlayToEndTimeNotification:) name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
 	}
@@ -89,7 +92,8 @@
 	if(numberOfLoops == -1 || numberOfLoops > loopCount){
 		loopCount++;
 		OAL_LOG_INFO(@"Looping %d / %d", loopCount, numberOfLoops);
-		[self setCurrentTime:0];
+		self.currentTime = 0;
+		[player seekToTime:kCMTimeZero toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero];
 		[player play];
 		return;
 	}
@@ -111,10 +115,27 @@
 	return YES;
 }
 
+- (BOOL) canPlay
+{
+	if(isPlaying)
+		return YES;
+	if(self.status != OALPlayerStatusReadyToPlay){
+		OAL_LOG_INFO(@"Cannot play. status is %@", (self.status == OALPlayerStatusUnknown)?@"Unknown":(self.status == OALPlayerStatusFailed)?[NSString stringWithFormat:@"Failed: %@", self.error]:@"Ready to play?!?!");
+		dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10000000), dispatch_get_main_queue(), ^{
+			[self play];
+		});
+		return NO;
+	}
+	return YES;
+}
+
 /* sound is played asynchronously. */
 - (BOOL)play
 {
 	if(isPlaying)
+		return YES;
+	
+	if(![self canPlay])
 		return YES;
 	
 	loopCount = 0;
@@ -231,8 +252,25 @@
 
 - (void) setCurrentTime:(NSTimeInterval)t
 {
+	return;
+	
+	NSArray *timeRanges = player.currentItem.seekableTimeRanges;
+	OAL_LOG_INFO(@"Set current time %.2f", t);
+	if([timeRanges count] == 0){
+		OAL_LOG_INFO(@"Not yet seekable, try again in 0.01 seconds");
+		dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10000000), dispatch_get_main_queue(), ^{
+			[self setCurrentTime:t];
+		});
+		return;
+	}
+	
+	for(NSValue *aTimeRangeValue in timeRanges){
+		CMTimeRange aTimeRange = [aTimeRangeValue CMTimeRangeValue];
+		OAL_LOG_INFO(@"Time range start %.2f (%lld), duration %.2f", CMTimeGetSeconds(aTimeRange.start), aTimeRange.start.epoch, CMTimeGetSeconds(aTimeRange.duration));
+	}
+	
 	CMTime cTime = CMTimeMakeWithSeconds(t, 1);
-	[player seekToTime:cTime toleranceBefore:CMTimeMakeWithSeconds(0.2, 1) toleranceAfter:CMTimeMakeWithSeconds(0.2, 1)];
+	[player seekToTime:cTime toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero];
 }
 
 - (NSTimeInterval) currentTime
