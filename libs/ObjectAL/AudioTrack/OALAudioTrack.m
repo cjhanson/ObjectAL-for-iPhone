@@ -568,14 +568,19 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 		playing = NO;
 		paused = NO;
 		
-		[self performSelector:@selector(postTrackSourceChangedNotification:) withObject:nil afterDelay:0.01];
-		
+		if(player.status == OALPlayerStatusReadyToPlay)
+			[self performSelector:@selector(postTrackSourceChangedNotification:) withObject:nil afterDelay:0.01];
+		else{
+			[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(postTrackSourceChangedNotification:) name:@"OALAudioPlayerReadyToPlay" object:player];
+		}
 		return YES;
 	}
 }
 
 - (void) postTrackSourceChangedNotification:(NSNotification *)notification
 {	
+	[[NSNotificationCenter defaultCenter] removeObserver:self name:@"OALAudioPlayerReadyToPlay" object:player];
+	
 	[[NSNotificationCenter defaultCenter] performSelectorOnMainThread:@selector(postNotification:) withObject:[NSNotification notificationWithName:OALAudioTrackSourceChangedNotification object:self] waitUntilDone:NO];
 }
 

@@ -28,6 +28,8 @@
 #import "OALAudioSupport.h"
 #import "ObjectALMacros.h"
 
+static const int PlayerStatusContext = 1;
+
 @implementation OALAudioPlayerAVPlayer
 @synthesize player;
 
@@ -55,9 +57,8 @@
 			return nil;
 		}
 		
-		AVPlayerItem *item		= [[AVPlayerItem alloc] initWithAsset:asset];
+		AVPlayerItem *item		= [[[AVPlayerItem alloc] initWithAsset:asset] autorelease];
 		player					= [[AVPlayer alloc] initWithPlayerItem:item];
-		[item release];
 		
 		if(!player){
 			if(outError)
@@ -69,6 +70,7 @@
 		if(outError)
 			*outError			= nil;
 		
+		player.actionAtItemEnd	= AVPlayerActionAtItemEndNone;
 		playerType = OALAudioPlayerTypeAVPlayer;
 		state = OALPlayerStateNotReady;
 		
@@ -81,9 +83,57 @@
 //		CMTime cTime = CMTimeMakeWithSeconds(120, 1);
 //		[player seekToTime:cTime toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero];
 		
-		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onAVPlayerItemDidPlayToEndTimeNotification:) name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
+		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onAVPlayerItemDidPlayToEndTimeNotification:) name:AVPlayerItemDidPlayToEndTimeNotification object:item];
+		
+		[player addObserver:self forKeyPath:@"status" options:0 context:(void *)&PlayerStatusContext];
 	}
 	return self;
+}
+		 
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
+{
+	OAL_LOG_INFO(@"Got key observing callback. Context %s", (*(int *)context == PlayerStatusContext)?"Y":"N");
+	int cID = *(int *)context;
+	switch(cID){
+		case 1:
+		{
+			//AVPlayer
+			AVPlayer *thePlayer = (AVPlayer *)object;
+			switch(thePlayer.status){
+				case AVPlayerStatusReadyToPlay:
+				{
+					OAL_LOG_INFO(@"AVPlayer status is Ready to Play");
+					
+					state = OALPlayerStateStopped;
+					
+					[[NSNotificationCenter defaultCenter] postNotificationName:@"OALAudioPlayerReadyToPlay" object:self];
+				}
+					break;
+				case AVPlayerStatusUnknown:
+				{
+					OAL_LOG_INFO(@"AVPlayer status is Unknown");
+				}
+					break;
+				case AVPlayerStatusFailed:
+				{
+					NSError *playerError = [thePlayer error];
+					OAL_LOG_ERROR(@"AVPlayer status is Error %@", playerError);
+					return;
+				}
+					break;
+			}
+		}
+			break;
+		case 2:
+		{
+			//AVPlayerItem
+		}
+			break;
+		default:
+			break;
+	}
+	
+    return;
 }
 
 - (void) onAVPlayerItemDidPlayToEndTimeNotification:(NSNotification *)notification
@@ -118,7 +168,7 @@
 - (BOOL) canPlay
 {
 	if(isPlaying)
-		return YES;
+		return NO;
 	if(self.status != OALPlayerStatusReadyToPlay){
 		OAL_LOG_INFO(@"Cannot play. status is %@", (self.status == OALPlayerStatusUnknown)?@"Unknown":(self.status == OALPlayerStatusFailed)?[NSString stringWithFormat:@"Failed: %@", self.error]:@"Ready to play?!?!");
 		dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10000000), dispatch_get_main_queue(), ^{
@@ -275,7 +325,7 @@
 
 - (NSTimeInterval) currentTime
 {
-	CMTime cTime = [player currentTime];
+	CMTime cTime = player.currentTime;
 	return CMTimeGetSeconds(cTime);
 }
 

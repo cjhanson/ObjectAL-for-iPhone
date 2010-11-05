@@ -338,7 +338,7 @@
 
 - (void) setSuspended:(bool) value
 {
-if(suspended != value)
+	if(suspended != value)
 	{
 		suspended = value;
 		if(suspended)
