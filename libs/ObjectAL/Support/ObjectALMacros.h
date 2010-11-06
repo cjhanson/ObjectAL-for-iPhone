@@ -83,7 +83,7 @@
 #if OBJECTAL_CFG_LOG_LEVEL > 2
 #define OAL_LOG_INFO(FMT, ...) OAL_LOG_BASE(@"Info: %s: %@", __PRETTY_FUNCTION__, FMT, ##__VA_ARGS__)
 #else /* OBJECTAL_CFG_LOG_LEVEL */
-#define OAL_LOG_INFO(FMT, ...)
+#define OAL_LOG_INFO(FMT, ...) do{}while(0)
 #endif /* OBJECTAL_CFG_LOG_LEVEL */
 
 /** Write a "Warning" log entry.
@@ -94,7 +94,7 @@
 #if OBJECTAL_CFG_LOG_LEVEL > 1
 #define OAL_LOG_WARNING(FMT, ...) OAL_LOG_BASE(@"Warning: %s: %@", __PRETTY_FUNCTION__, FMT, ##__VA_ARGS__)
 #else /* OBJECTAL_CFG_LOG_LEVEL */
-#define OAL_LOG_WARNING(FMT, ...)
+#define OAL_LOG_WARNING(FMT, ...) do{}while(0)
 #endif /* OBJECTAL_CFG_LOG_LEVEL */
 
 /** Write an "Error" log entry.
@@ -105,7 +105,7 @@
 #if OBJECTAL_CFG_LOG_LEVEL > 0
 #define OAL_LOG_ERROR(FMT, ...) OAL_LOG_BASE(@"Error: %s: %@", __PRETTY_FUNCTION__, FMT, ##__VA_ARGS__)
 #else /* OBJECTAL_CFG_LOG_LEVEL */
-#define OAL_LOG_ERROR(FMT, ...)
+#define OAL_LOG_ERROR(FMT, ...) do{}while(0)
 #endif /* OBJECTAL_CFG_LOG_LEVEL */
 
 /** Write an "Error" log entry with context.
@@ -117,7 +117,7 @@
 #if OBJECTAL_CFG_LOG_LEVEL > 0
 #define OAL_LOG_ERROR_CONTEXT(CONTEXT, FMT, ...) OAL_LOG_BASE(@"Error: %s: %@", CONTEXT, FMT, ##__VA_ARGS__)
 #else /* OBJECTAL_CFG_LOG_LEVEL */
-#define OAL_LOG_ERROR_CONTEXT(FMT, ...)
+#define OAL_LOG_ERROR_CONTEXT(FMT, ...) do{}while(0)
 #endif /* OBJECTAL_CFG_LOG_LEVEL */
 
 #pragma mark -
@@ -163,8 +163,8 @@ if(noErr != (ERROR_CODE)) \
 
 #else /* OBJECTAL_CFG_LOG_LEVEL */
 
-#define REPORT_AUDIOSESSION_CALL(ERROR_CODE, FMT, ...)
-#define REPORT_EXTAUDIO_CALL(ERROR_CODE, FMT, ...)
-#define REPORT_AUDIO_QUEUE_CALL(ERROR_CODE, FMT, ...)
+#define REPORT_AUDIOSESSION_CALL(ERROR_CODE, FMT, ...) do{}while(0)
+#define REPORT_EXTAUDIO_CALL(ERROR_CODE, FMT, ...) do{}while(0)
+#define REPORT_AUDIO_QUEUE_CALL(ERROR_CODE, FMT, ...) do{}while(0)
 
 #endif /* OBJECTAL_CFG_LOG_LEVEL */

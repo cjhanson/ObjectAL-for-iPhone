@@ -37,6 +37,8 @@ static const int PlayerStatusContext = 1;
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	
+	[player removeObserver:self forKeyPath:@"status"];
+	
 	[asset release];
 	[url release];
 	[player release];
