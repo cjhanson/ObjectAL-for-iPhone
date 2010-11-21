@@ -88,8 +88,10 @@
 		[ALWrapper sourcei:sourceId parameter:AL_BUFFER value:AL_NONE];
 	}
 
-	[buffer release];
-
+	// In IOS 3.x, OpenAL doesn't stop playing right away.
+	// Release after a delay to give it some time to stop.
+	[buffer performSelector:@selector(release) withObject:nil afterDelay:0.1];
+	
 	@synchronized([OpenALManager sharedInstance])
 	{
 		ALContext* oldContext = [OpenALManager sharedInstance].currentContext;
@@ -118,19 +120,26 @@
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
 		[self stop];
-		[buffer autorelease];
+
+		// In IOS 3.x, OpenAL doesn't stop playing right away.
+		// Release after a delay to give it some time to stop.
+		[buffer performSelector:@selector(release) withObject:nil afterDelay:0.1];
+
 		buffer = [value retain];
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper sourcei:sourceId parameter:AL_BUFFER value:buffer.bufferId];
 	}
 }
 
 - (int) buffersQueued
 {
+	OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 	return [ALWrapper getSourcei:sourceId parameter:AL_BUFFERS_QUEUED];
 }
 
 - (int) buffersProcessed
 {
+	OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 	return [ALWrapper getSourcei:sourceId parameter:AL_BUFFERS_PROCESSED];
 }
 
@@ -138,6 +147,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		return [ALWrapper getSourcef:sourceId parameter:AL_CONE_INNER_ANGLE];
 	}
 }
@@ -146,6 +156,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper sourcef:sourceId parameter:AL_CONE_INNER_ANGLE value:value];
 	}
 }
@@ -154,6 +165,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		return [ALWrapper getSourcef:sourceId parameter:AL_CONE_OUTER_ANGLE];
 	}
 }
@@ -162,6 +174,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper sourcef:sourceId parameter:AL_CONE_OUTER_ANGLE value:value];
 	}
 }
@@ -170,6 +183,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		return [ALWrapper getSourcef:sourceId parameter:AL_CONE_OUTER_GAIN];
 	}
 }
@@ -178,6 +192,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper sourcef:sourceId parameter:AL_CONE_OUTER_GAIN value:value];
 	}
 }
@@ -189,6 +204,7 @@
 	ALVector result;
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper getSource3f:sourceId parameter:AL_DIRECTION v1:&result.x v2:&result.y v3:&result.z];
 	}
 	return result;
@@ -198,6 +214,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED_STRUCT_OP(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper source3f:sourceId parameter:AL_DIRECTION v1:value.x v2:value.y v3:value.z];
 	}
 }
@@ -229,6 +246,7 @@
 		{
 			value = 0;
 		}
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper sourcef:sourceId parameter:AL_GAIN value:value];
 	}
 }
@@ -239,6 +257,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		return [ALWrapper getSourcei:sourceId parameter:AL_LOOPING];
 	}
 }
@@ -247,6 +266,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper sourcei:sourceId parameter:AL_LOOPING value:value];
 	}
 }
@@ -255,6 +275,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		return [ALWrapper getSourcef:sourceId parameter:AL_MAX_DISTANCE];
 	}
 }
@@ -263,6 +284,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper sourcef:sourceId parameter:AL_MAX_DISTANCE value:value];
 	}
 }
@@ -271,6 +293,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		return [ALWrapper getSourcef:sourceId parameter:AL_MAX_GAIN];
 	}
 }
@@ -279,6 +302,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper sourcef:sourceId parameter:AL_MAX_GAIN value:value];
 	}
 }
@@ -287,6 +311,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		return [ALWrapper getSourcef:sourceId parameter:AL_MIN_GAIN];
 	}
 }
@@ -295,6 +320,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper sourcef:sourceId parameter:AL_MIN_GAIN value:value];
 	}
 }
@@ -317,6 +343,7 @@
 			[self stopActions];
 		}
 		float resultingGain = muted ? 0 : gain;
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper sourcef:sourceId parameter:AL_GAIN value:resultingGain];
 	}
 }
@@ -325,6 +352,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		return [ALWrapper getSourcef:sourceId parameter:AL_BYTE_OFFSET];
 	}
 }
@@ -333,6 +361,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper sourcef:sourceId parameter:AL_BYTE_OFFSET value:value];
 	}
 }
@@ -341,6 +370,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		return [ALWrapper getSourcef:sourceId parameter:AL_SAMPLE_OFFSET];
 	}
 }
@@ -349,6 +379,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper sourcef:sourceId parameter:AL_SAMPLE_OFFSET value:value];
 	}
 }
@@ -357,6 +388,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		return [ALWrapper getSourcef:sourceId parameter:AL_SEC_OFFSET];
 	}
 }
@@ -365,6 +397,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper sourcef:sourceId parameter:AL_SEC_OFFSET value:value];
 	}
 }
@@ -382,6 +415,7 @@
 		{
 			if(AL_PLAYING == self.state)
 			{
+				OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 				[ALWrapper sourcePause:sourceId];
 			}
 		}
@@ -389,6 +423,7 @@
 		{
 			if(AL_PAUSED == self.state)
 			{
+				OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 				[ALWrapper sourcePlay:sourceId];
 			}
 		}
@@ -399,6 +434,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		return [ALWrapper getSourcef:sourceId parameter:AL_PITCH];
 	}
 }
@@ -407,6 +443,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper sourcef:sourceId parameter:AL_PITCH value:value];
 	}
 }
@@ -421,6 +458,7 @@
 	ALPoint result;
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper getSource3f:sourceId parameter:AL_POSITION v1:&result.x v2:&result.y v3:&result.z];
 	}
 	return result;
@@ -430,6 +468,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED_STRUCT_OP(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper source3f:sourceId parameter:AL_POSITION v1:value.x v2:value.y v3:value.z];
 	}
 }
@@ -448,6 +487,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		return [ALWrapper getSourcef:sourceId parameter:AL_REFERENCE_DISTANCE];
 	}
 }
@@ -456,6 +496,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper sourcef:sourceId parameter:AL_REFERENCE_DISTANCE value:value];
 	}
 }
@@ -464,6 +505,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		return [ALWrapper getSourcef:sourceId parameter:AL_ROLLOFF_FACTOR];
 	}
 }
@@ -472,6 +514,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper sourcef:sourceId parameter:AL_ROLLOFF_FACTOR value:value];
 	}
 }
@@ -482,6 +525,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		return [ALWrapper getSourcei:sourceId parameter:AL_SOURCE_RELATIVE];
 	}
 }
@@ -490,6 +534,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper sourcei:sourceId parameter:AL_SOURCE_RELATIVE value:value];
 	}
 }
@@ -498,6 +543,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		return [ALWrapper getSourcei:sourceId parameter:AL_SOURCE_TYPE];
 	}
 }
@@ -506,6 +552,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper sourcei:sourceId parameter:AL_SOURCE_TYPE value:value];
 	}
 }
@@ -514,6 +561,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		return [ALWrapper getSourcei:sourceId parameter:AL_SOURCE_STATE];
 	}
 }
@@ -522,6 +570,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper sourcei:sourceId parameter:AL_SOURCE_STATE value:value];
 	}
 }
@@ -531,6 +580,7 @@
 	ALVector result;
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper getSource3f:sourceId parameter:AL_VELOCITY v1:&result.x v2:&result.y v3:&result.z];
 	}
 	return result;
@@ -540,6 +590,7 @@
 {
 	OPTIONALLY_SYNCHRONIZED_STRUCT_OP(self)
 	{
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper source3f:sourceId parameter:AL_VELOCITY v1:value.x v2:value.y v3:value.z];
 	}
 }
@@ -582,6 +633,7 @@
 			[self stop];
 		}
 		
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper sourcePlay:sourceId];
 	}
 	return self;
@@ -610,6 +662,7 @@
 		self.buffer = bufferIn;
 		self.looping = loop;
 		
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper sourcePlay:sourceId];
 	}
 	return self;
@@ -638,6 +691,7 @@
 		self.pan = panIn;
 		self.looping = loopIn;
 		
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper sourcePlay:sourceId];
 	}		
 	return self;
@@ -648,6 +702,7 @@
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
 		[self stopActions];
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper sourceStop:sourceId];
 		paused = NO;
 	}
@@ -765,6 +820,7 @@
 			self.buffer = nil;
 		}
 		ALuint bufferId = bufferIn.bufferId;
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		return [ALWrapper sourceQueueBuffers:sourceId numBuffers:1 bufferIds:&bufferId];
 	}
 }
@@ -784,6 +840,7 @@
 		{
 			bufferIds[i] = buf.bufferId;
 		}
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		bool result = [ALWrapper sourceQueueBuffers:sourceId numBuffers:numBuffers bufferIds:bufferIds];
 		free(bufferIds);
 		return result;
@@ -795,6 +852,7 @@
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
 		ALuint bufferId = bufferIn.bufferId;
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		return [ALWrapper sourceUnqueueBuffers:sourceId numBuffers:1 bufferIds:&bufferId];
 	}
 }
@@ -814,6 +872,7 @@
 		{
 			bufferIds[i] = buf.bufferId;
 		}
+		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		bool result = [ALWrapper sourceUnqueueBuffers:sourceId numBuffers:numBuffers bufferIds:bufferIds];
 		free(bufferIds);
 		return result;

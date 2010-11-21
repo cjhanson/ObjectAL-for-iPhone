@@ -48,10 +48,7 @@
 	/** All opened devices */
 	NSMutableArray* devices;
 	
-	/** All suspended contexts */
-	NSMutableArray* suspendedContexts;
-	
-	bool suspended;
+	bool interrupted;
 }
 
 
@@ -63,7 +60,8 @@
 /** List of available capture devices (NSString*). */
 @property(readonly) NSArray* availableCaptureDevices;
 
-/** The current context (some context operations require the context to be the "current" one). */
+/** The current context (some context operations require the context to be the "current" one).
+ */
 @property(readwrite,assign) ALContext* currentContext;
 
 /** Name of the default capture device. */
@@ -101,7 +99,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS_HEADER(OpenALManager);
 /** (INTERNAL USE) Used by the interrupt handler to suspend ObjectAL
  * (if interrupts are enabled in OALAudioSupport).
  */
-@property(readwrite,assign) bool suspended;
+@property(readwrite,assign) bool interrupted;
 
 /** (INTERNAL USE) Notify that a device is initializing.
  */

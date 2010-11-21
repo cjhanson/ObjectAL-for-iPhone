@@ -36,7 +36,7 @@
 @interface OALAudioTrack : NSObject <AVAudioPlayerDelegate>
 {
 	bool meteringEnabled;
-	bool suspended;
+	bool interrupted;
 	AVAudioPlayer* player;
 	NSURL* currentlyLoadedUrl;
 	bool paused;
@@ -64,9 +64,6 @@
 	 */
 	bool playing;
 	NSTimeInterval currentTime;
-	
-	/** Check to see if we are running iOS 4.0 or higher. */
-	bool isIOS40OrHigher;
 	
 	/** The current action being applied to gain. */
 	OALAction* gainAction;
@@ -411,6 +408,6 @@
 /** (INTERNAL USE) Used by the interrupt handler to suspend the audio device
  * (if interrupts are enabled in OALAudioSupport).
  */
-@property(readwrite,assign) bool suspended;
+@property(readwrite,assign) bool interrupted;
 
 @end

@@ -67,7 +67,7 @@
 	ALChannelSource* channel;
 	/** Cache for preloaded sound samples. */
 	NSMutableDictionary* preloadCache;
-#if NS_BLOCKS_AVAILABLE
+#if NS_BLOCKS_AVAILABLE && OBJECTAL_USE_BLOCKS
 	/** Queue for preloading and async operations that use blocks. This ensures all operations are safe because they are guaranteed to run in order. */
 	dispatch_queue_t oal_dispatch_queue;
 #endif
@@ -122,6 +122,9 @@
  * Default value: YES
  */
 @property(readwrite,assign) bool honorSilentSwitch;
+
+/** The number of sources OALSimpleAudio is using (max 32 on current iOS devices). */
+@property(readwrite,assign) unsigned int reservedSources;
 
 /** Background audio URL */
 @property(readonly) NSURL* backgroundTrackURL;
@@ -298,7 +301,8 @@ SYNTHESIZE_SINGLETON_FOR_CLASS_HEADER(OALSimpleAudio);
  */
 - (ALBuffer*) preloadEffect:(NSString*) filePath;
 
-#if NS_BLOCKS_AVAILABLE
+#if NS_BLOCKS_AVAILABLE && OBJECTAL_USE_BLOCKS
+
 /** Asynchronous preload and cache sound effect for later playback.
  *
  * @param filePath an NSString with the path containing the sound data.
@@ -314,14 +318,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS_HEADER(OALSimpleAudio);
  */
 - (void) preloadEffects:(NSArray*) filePaths
 		  progressBlock:(void (^)(uint progress, uint successCount, uint total)) progressBlock;
-#else
-/** Asynchronous preload and cache multiple sound effects for later playback.
- *
- * @param filePaths An NSArray of NSStrings with the paths containing the sound data.
- * @param progressInvocation Invoked regularly while file loading is in progress.
- */
-- (void) preloadEffects:(NSArray*) filePaths
-	 progressInvocation:(NSInvocation *) progressInvocation;
+
 #endif
 
 /** Unload a preloaded effect.
@@ -379,5 +376,9 @@ SYNTHESIZE_SINGLETON_FOR_CLASS_HEADER(OALSimpleAudio);
 /** Stop all effects and bg music.
  */
 - (void) stopEverything;
+
+/** Reset everything in this object to its default state.
+ */
+- (void) resetToDefault;
 
 @end
