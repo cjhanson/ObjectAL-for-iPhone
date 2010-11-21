@@ -52,12 +52,12 @@ extern NSString *const OALAudioSessionInterruptEndNotification;
  *
  * \code afconvert -f caff -d I8@@22050 sourcefile.wav destfile.caf \endcode
  */
-@interface OALAudioSupport : NSObject
+@interface OALAudioSupport : NSObject <AVAudioSessionDelegate>
 {
 	/** Operation queue for asynchronous loading. */
 	NSOperationQueue* operationQueue;
 
-	UInt32 overrideAudioSessionCategory;
+	NSString* overrideAudioSessionCategory;
 
 	bool handleInterruptions;
 	bool allowIpod;
@@ -70,9 +70,6 @@ extern NSString *const OALAudioSessionInterruptEndNotification;
 	/** Delegate for interruptions */
 	id<AVAudioSessionDelegate> audioSessionDelegate;
 
-	/** Marks the overall sound engine as being suspended. */
-	bool suspended;
-	
 	/** If true, BackgoundAudio was already suspended when the interrupt occurred. */
 	bool backgroundAudioWasSuspended;
 	
@@ -81,6 +78,17 @@ extern NSString *const OALAudioSessionInterruptEndNotification;
 	
 	/** If true, the audio session was active when the interrupt occurred. */
 	bool audioSessionWasActive;
+	
+	NSUInteger activationAttempts;
+	
+	/** State of the audio engine. This can change due to interruption or be set by the user */
+	bool suspended;
+	
+	/** State of Audio Session interruption */
+	bool interrupted;
+	
+	/** The time that the application was last activated. */
+	NSDate* lastActivated;
 }
 
 
@@ -96,7 +104,7 @@ extern NSString *const OALAudioSessionInterruptEndNotification;
  *
  * Default value: 0
  */
-@property(readwrite,assign) UInt32 overrideAudioSessionCategory;
+@property(readwrite,retain) NSString* overrideAudioSessionCategory;
 
 /** If YES, allow ipod music to continue playing (NOT SUPPORTED ON THE SIMULATOR).
  * Note: If this is enabled, and another app is playing music, background audio
@@ -155,8 +163,10 @@ extern NSString *const OALAudioSessionInterruptEndNotification;
 /** If true, the audio session is active */
 @property(readwrite,assign) bool audioSessionActive;
 
-/** Marks the overall sound engine as being suspended. */
-@property(readonly) bool suspended;
+/** If true, the audio is suspended */
+@property(readwrite, assign) bool suspended;
+
+//@property(readwrite, assign) bool interrupted;
 
 /** Get the device's final hardware output volume, as controlled by
  * the volume button on the side of the device.
@@ -296,9 +306,5 @@ SYNTHESIZE_SINGLETON_FOR_CLASS_HEADER(OALAudioSupport);
  */
 + (NSString *) stringFromAVAssetReaderStatus:(AVAssetReaderStatus)status;
 
-
-/** (INTERNAL USE) Workaround for iOS 4.x bug
- */
-- (void) badAlContextHandler;
 
 @end

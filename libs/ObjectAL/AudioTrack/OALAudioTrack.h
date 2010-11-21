@@ -37,7 +37,7 @@
 @interface OALAudioTrack : NSObject <OALAudioPlayerDelegate>
 {
 	bool meteringEnabled;
-	bool suspended;
+	bool interrupted;
 	OALAudioPlayer* player;
 	NSURL* currentlyLoadedUrl;
 	bool paused;
@@ -416,6 +416,6 @@
 /** (INTERNAL USE) Used by the interrupt handler to suspend the audio device
  * (if interrupts are enabled in OALAudioSupport).
  */
-@property(readwrite,assign) bool suspended;
+@property(readwrite,assign) bool interrupted;
 
 @end

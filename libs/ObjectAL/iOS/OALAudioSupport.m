@@ -29,12 +29,15 @@
 #import <AudioToolbox/AudioToolbox.h>
 #import "OALAudioTracks.h"
 #import "OpenALManager.h"
+#import <UIKit/UIKit.h>
 
 NSString *const OALAudioSessionInterruptBeginNotification	= @"OALAudioSessionInterruptBeginNotification";
 NSString *const OALAudioSessionInterruptEndNotification		= @"OALAudioSessionInterruptEndNotification";
 
 
 #define kMaxSessionActivationRetries 40
+
+#define kMinTimeBetweenActivations 3.0
 
 #pragma mark Asynchronous Operations
 
@@ -115,7 +118,7 @@ NSString *const OALAudioSessionInterruptEndNotification		= @"OALAudioSessionInte
 /** (INTERNAL USE) Used by the interrupt handler to suspend audio
  * (if interrupts are enabled).
  */
-@property(readwrite,assign) bool suspended;
+@property(readwrite,assign) bool interrupted;
 
 /** (INTERNAL USE) Get an AudioSession property.
  *
@@ -177,14 +180,26 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(OALAudioSupport);
 	if(nil != (self = [super init]))
 	{
 		operationQueue = [[NSOperationQueue alloc] init];
-		REPORT_AUDIOSESSION_CALL(AudioSessionInitialize(NULL, NULL, interruptListenerCallback, self), @"Failed to initialize audio session");
-
+		[(AVAudioSession*)[AVAudioSession sharedInstance] setDelegate: self];
+		[[NSNotificationCenter defaultCenter] addObserver:self
+												 selector:@selector(appBecameActive:)
+													 name:UIApplicationDidBecomeActiveNotification
+												   object:nil];
+		[[NSNotificationCenter defaultCenter] addObserver:self
+												 selector:@selector(appResignedActive:)
+													 name:UIApplicationWillResignActiveNotification
+												   object:nil];
+		
+		lastActivated = nil;
+		activationAttempts = 0;
 		handleInterruptions = YES;
 		audioSessionDelegate = nil;
 		allowIpod = YES;
 		ipodDucking = NO;
 		useHardwareIfAvailable = YES;
 		honorSilentSwitch = YES;
+		interrupted = NO;
+		suspended = NO;
 		self.audioSessionActive = YES;
 	}
 	return self;
@@ -195,13 +210,14 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(OALAudioSupport);
 	self.audioSessionActive = NO;
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[operationQueue release];
+	[overrideAudioSessionCategory release];
 	[super dealloc];
 }
 
 
 #pragma mark Properties
 
-- (UInt32) overrideAudioSessionCategory
+- (NSString*) overrideAudioSessionCategory
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
@@ -209,10 +225,12 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(OALAudioSupport);
 	}
 }
 
-- (void) setOverrideAudioSessionCategory:(UInt32) value
+- (void) setOverrideAudioSessionCategory:(NSString*) value
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		[value retain];
+		[overrideAudioSessionCategory release];
 		overrideAudioSessionCategory = value;
 		[self updateAudioMode];
 	}	
@@ -454,7 +472,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(OALAudioSupport);
 		}
 	}
 	
-	alBuffer = [ALBuffer bufferWithName:[url absoluteString]
+	alBuffer = [ALBuffer bufferWithName:[url path]
 								   data:streamData
 								   size:streamSizeInBytes
 								 format:audioFormat
@@ -485,7 +503,7 @@ done:
 	{
 		[operationQueue addOperation:[OAL_AsyncALBufferLoadOperation operationWithUrl:url target:target selector:selector]];
 	}
-	return [url absoluteString];
+	return [url path];
 }
 
 
@@ -887,14 +905,23 @@ NSString *GetNSStringFrom4CharCode(unsigned long code)
 	REPORT_AUDIOSESSION_CALL(result, @"Failed to get int property %08x", property);
 }
 
+- (void) setAudioCategory:(NSString*) audioCategory
+{
+	NSError* error;
+	if(![[AVAudioSession sharedInstance] setCategory:audioCategory error:&error])
+	{
+		OAL_LOG_ERROR(@"Failed to set audio category: %@", error);
+	}
+}
+
 - (void) updateAudioMode
 {
 	// Simulator doesn't support setting the audio category.
 #if !TARGET_IPHONE_SIMULATOR
 	
-	if(0 != overrideAudioSessionCategory)
+	if(nil != overrideAudioSessionCategory)
 	{
-		[self setIntProperty:kAudioSessionProperty_AudioCategory value:overrideAudioSessionCategory];
+		[self setAudioCategory:overrideAudioSessionCategory];
 	}
 	else
 	{
@@ -903,23 +930,20 @@ NSString *GetNSStringFrom4CharCode(unsigned long code)
 			if(allowIpod && (self.ipodPlaying || !useHardwareIfAvailable))
 			{
 				// AmbientSound uses software codec.
-				[self setIntProperty:kAudioSessionProperty_AudioCategory
-							   value:kAudioSessionCategory_AmbientSound];
+				[self setAudioCategory:AVAudioSessionCategoryAmbient];
 				[self setIntProperty:kAudioSessionProperty_OtherMixableAudioShouldDuck
 							   value:ipodDucking];
 			}
 			else
 			{
 				// SoloAmbientSound uses hardware codec.
-				[self setIntProperty:kAudioSessionProperty_AudioCategory
-							   value:kAudioSessionCategory_SoloAmbientSound];
+				[self setAudioCategory:AVAudioSessionCategorySoloAmbient];
 			}
 		}
 		else
 		{
 			// MediaPlayback also allows audio to continue playing when backgrounded.
-			[self setIntProperty:kAudioSessionProperty_AudioCategory
-						   value:kAudioSessionCategory_MediaPlayback];
+			[self setAudioCategory:AVAudioSessionCategoryPlayback];
 
 			if(allowIpod && (self.ipodPlaying || !useHardwareIfAvailable))
 			{
@@ -951,45 +975,77 @@ NSString *GetNSStringFrom4CharCode(unsigned long code)
 
 /** Work around for iOS4 bug that causes the session to not activate on the first few attempts
  * in certain situations.
- *
- * @param currentRetryCount The retry attempt number.  It will give up after too many attempts.
  */ 
-- (void) activateAudioSession:(int) currentRetryCount
+- (void) activateAudioSession
 {
-	if(currentRetryCount >= kMaxSessionActivationRetries)
-	{
-		OAL_LOG_ERROR(@"Could not activate session after %d retries.", currentRetryCount);
+	if(audioSessionActive){
+		return;
+	}
+	if(activationAttempts > kMaxSessionActivationRetries){
+		OAL_LOG_ERROR(@"Could not activate audio session after %d", activationAttempts);
+		return;
+	}
+	NSTimeInterval timeUntilOkToTryAgain	= kMinTimeBetweenActivations - [lastActivated timeIntervalSinceNow];
+	if(timeUntilOkToTryAgain > 0){
+		[self performSelector:_cmd withObject:nil afterDelay:timeUntilOkToTryAgain+0.01];
 		return;
 	}
 	
-	OSStatus result = AudioSessionSetActive(YES);
-	REPORT_AUDIOSESSION_CALL(result, @"Error activating audio session");
-	if(noErr != result)
+	timeUntilOkToTryAgain	= 0.2;
+	activationAttempts++;
+	NSError* error;
+	if([[AVAudioSession sharedInstance] setActive:YES error:&error])
 	{
-		[NSThread sleepForTimeInterval:0.2];
-		[self activateAudioSession:currentRetryCount + 1];
+		[lastActivated autorelease];
+		lastActivated = [[NSDate date] retain];
+		audioSessionActive = YES;
+		activationAttempts = 0;
+		if(handleInterruptions && audioSessionWasActive){
+			if(!backgroundAudioWasSuspended)
+				[OALAudioTracks sharedInstance].interrupted = NO;
+			if(!objectALWasSuspended)
+				[OpenALManager sharedInstance].interrupted = NO;
+		}
+		audioSessionWasActive = NO;
+		return;
 	}
+	
+	OAL_LOG_WARNING(@"Failed to activate the audio session. Attempt #%d/%d", activationAttempts, kMaxSessionActivationRetries);
+	[self performSelector:_cmd withObject:nil afterDelay:timeUntilOkToTryAgain];
 }
 
 - (void) setAudioSessionActive:(bool) value
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
-		if(value != audioSessionActive)
+		if(value)
 		{
-			audioSessionActive = value;
-			
-			if(audioSessionActive)
+			[self updateAudioMode];
+			[self activateAudioSession];
+		}
+		else if(audioSessionActive != value)
+		{
+			NSError* error;
+			if(![[AVAudioSession sharedInstance] setActive:NO error:&error])
 			{
-				[self updateAudioMode];
-				[self activateAudioSession:0];
-				self.suspended = NO;
+				OAL_LOG_ERROR(@"Could not deactivate audio session: %@", error);
 			}
 			else
 			{
-				REPORT_AUDIOSESSION_CALL(AudioSessionSetActive(NO), @"Error deactivating audio session");
-				self.suspended = YES;
+				audioSessionActive = NO;
 			}
+		}
+	}
+}
+
+- (void) setInterrupted:(bool) value
+{
+	OPTIONALLY_SYNCHRONIZED(self)
+	{
+		interrupted = value;
+		if(interrupted){
+			audioSessionWasActive = self.audioSessionActive;
+			audioSessionActive = NO;
 		}
 	}
 }
@@ -1002,45 +1058,77 @@ NSString *GetNSStringFrom4CharCode(unsigned long code)
 	}
 }
 
+//This will activate/deactivate the audio session if we handle interruptions
 - (void) setSuspended:(bool) value
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
-		if(value != suspended)
-		{
+//		if(value != suspended)
+//		{
 			suspended = value;
 			if(suspended)
 			{
-				backgroundAudioWasSuspended = [OALAudioTracks sharedInstance].suspended;
-				objectALWasSuspended = [OpenALManager sharedInstance].suspended;
-				[OpenALManager sharedInstance].suspended = YES;
-				[OALAudioTracks sharedInstance].suspended = YES;
+				backgroundAudioWasSuspended = [OALAudioTracks sharedInstance].interrupted;
+				objectALWasSuspended = [OpenALManager sharedInstance].interrupted;
+				[OpenALManager sharedInstance].interrupted = YES;
+				[OALAudioTracks sharedInstance].interrupted = YES;
+				
+				if(handleInterruptions && audioSessionActive){
+					audioSessionWasActive = YES;
+					self.audioSessionActive = NO;
+				}
 			}
 			else
 			{
-				if(!backgroundAudioWasSuspended)
+				if(handleInterruptions && audioSessionWasActive)
 				{
-					[OALAudioTracks sharedInstance].suspended = NO;
+					if(!self.audioSessionActive)
+						self.audioSessionActive = YES;
+					//Going to un-interrupt these after our session is reactivated successfully:
+					//[OpenALManager sharedInstance].interrupted = NO;
+					//[OALAudioTracks sharedInstance].interrupted = NO;
 				}
-				if(!objectALWasSuspended)
+				else
 				{
-					[OpenALManager sharedInstance].suspended = NO;
+					if(!backgroundAudioWasSuspended)
+						[OALAudioTracks sharedInstance].interrupted = NO;
+					if(!objectALWasSuspended)
+						[OpenALManager sharedInstance].interrupted = NO;
 				}
 			}
-		}
+//		}
 	}
 }
 
-- (void) onInterruptBegin
+
+- (void) appBecameActive:(id) sender
 {
-	OPTIONALLY_SYNCHRONIZED(self)
+	@synchronized(self)
 	{
-		audioSessionWasActive = audioSessionActive;
-		
-		if(handleInterruptions && audioSessionWasActive)
-		{
-			self.audioSessionActive = NO;
-		}
+		if(handleInterruptions && !self.interrupted)
+			self.suspended = NO;
+	}
+}
+
+
+- (void) appResignedActive:(id) sender
+{
+	@synchronized(self)
+	{
+		if(handleInterruptions && !self.interrupted)
+			self.suspended = YES;
+	}
+}
+
+
+// AVAudioSessionDelegate
+- (void) beginInterruption
+{
+	@synchronized(self)
+	{
+		self.interrupted = YES;
+		if(handleInterruptions)
+			self.suspended = YES;
 		
 		if(audioSessionDelegate && [audioSessionDelegate respondsToSelector:@selector(beginInterruption)])
 		{
@@ -1051,55 +1139,55 @@ NSString *GetNSStringFrom4CharCode(unsigned long code)
 	}
 }
 
-- (void) onInterruptEnd
+- (void) endInterruption
 {
-	OPTIONALLY_SYNCHRONIZED(self)
+	@synchronized(self)
 	{
-		if(handleInterruptions && audioSessionWasActive)
-		{
-			self.audioSessionActive = YES;
-		}
+		self.interrupted = NO;
+		if(handleInterruptions)
+			self.suspended = NO;
 		
-		if(audioSessionDelegate){
-			if([audioSessionDelegate respondsToSelector:@selector(endInterruptionWithFlags:)])
-			{
-				[audioSessionDelegate endInterruptionWithFlags:AVAudioSessionInterruptionFlags_ShouldResume];
-			}
-			else if([audioSessionDelegate respondsToSelector:@selector(endInterruption)])
-			{
-				[audioSessionDelegate endInterruption];
-			}
+		if([audioSessionDelegate respondsToSelector:@selector(endInterruptionWithFlags:)])
+		{
+			[audioSessionDelegate endInterruptionWithFlags:AVAudioSessionInterruptionFlags_ShouldResume];
+		}
+		else if([audioSessionDelegate respondsToSelector:@selector(endInterruption)])
+		{
+			[audioSessionDelegate endInterruption];
 		}
 		
 		[[NSNotificationCenter defaultCenter] postNotificationName:OALAudioSessionInterruptEndNotification object:nil];
 	}
 }
 
-static void interruptListenerCallback(void* inUserData, UInt32 interruptionState)
+- (void)endInterruptionWithFlags:(NSUInteger)flags
 {
-	OALAudioSupport* handler = (OALAudioSupport*) inUserData;
-	switch(interruptionState)
+	@synchronized(self)
 	{
-		case kAudioSessionBeginInterruption:
-			[handler onInterruptBegin];
-			break;
-		case kAudioSessionEndInterruption:
-			[handler onInterruptEnd];
-			break;
+		self.interrupted = NO;
+		if(handleInterruptions)
+			self.suspended = NO;
+		
+		if([audioSessionDelegate respondsToSelector:@selector(endInterruptionWithFlags:)])
+		{
+			[audioSessionDelegate endInterruptionWithFlags:flags];
+		}
+		else if([audioSessionDelegate respondsToSelector:@selector(endInterruption)])
+		{
+			[audioSessionDelegate endInterruption];
+		}
+		
+		[[NSNotificationCenter defaultCenter] postNotificationName:OALAudioSessionInterruptEndNotification object:nil];
 	}
 }
 
-/**
- * This method is used to work around various bugs introduced in 4.x OS versions. In some circumstances the 
- * audio session is interrupted but never resumed, this results in the loss of OpenAL audio when following 
- * standard practices. If we detect this situation then we will attempt to resume the audio session ourselves.
- * Known triggers: lock the device then unlock it (iOS 4.2 gm), playback a song using MPMediaPlayer (iOS 4.0)
- */
-- (void) badAlContextHandler {
-	if(handleInterruptions && audioSessionWasActive && !audioSessionActive && alcGetCurrentContext() == NULL) {
-		OAL_LOG_INFO(@"bad OpenAL context detected. The situation occurs when the audio session is interrupted but never ends the interruption?");
-		[self onInterruptEnd];
-	}	
+- (void)inputIsAvailableChanged:(BOOL)isInputAvailable
+{
+	if([audioSessionDelegate respondsToSelector:@selector(inputIsAvailableChanged:)])
+	{
+		[audioSessionDelegate inputIsAvailableChanged:isInputAvailable];
+	}
 }
+
 
 @end

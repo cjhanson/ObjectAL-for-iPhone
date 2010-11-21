@@ -42,7 +42,7 @@
 - (void) prepareScenes;
 - (void) addScene:(Class) sceneClass named:(NSString*) name;
 
-- (void) setStartIndex:(int) newIndex;
+- (void) setStartIndex:(uint) newIndex;
 - (void) onMenuSlideComplete;
 
 - (void) onSceneSelect:(IndexedMenuItemLabel*) item;
@@ -137,8 +137,13 @@ static uint startIndex = 0;
 
 - (void) onEnterTransitionDidFinish
 {
-	// Make sure OALSimpleAudio isn't initialized from another demo
-	// when returning to the main scene.
+	/* Make sure OALSimpleAudio isn't initialized from another demo
+	 * when returning to the main scene.
+	 *
+	 * Note: You normally wouldn't do this in a real project. I do it here
+	 * to provide a clean slate for the individual demos, which expect a
+	 * clean slate.
+	 */
 	[OALSimpleAudio purgeSharedInstance];
 }
 

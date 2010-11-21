@@ -499,7 +499,7 @@
  As you've likely heard time and time again, the simulator is no substitute for the real thing.
  The simulator is buggy.  It can run faster or slower than a real device.  It fails system calls
  that a real device doesn't.  It shows graphics glitches that a real device doesn't.  Sounds stop
- working. Dogs and cats living together, etc, etc.
+ working, clicks and static, dogs and cats living together, etc, etc.
  When things look wrong, try it on a real device before bugging people.
  
  

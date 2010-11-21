@@ -261,7 +261,7 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 		operationQueue.maxConcurrentOperationCount = 1;
 		
 		meteringEnabled = false;
-		suspended = false;
+		interrupted = false;
 		player = nil;
 		currentlyLoadedUrl = nil;
 		paused = false;
@@ -422,7 +422,7 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 		if(paused != value)
 		{
 			paused = value;
-			if(!suspended)
+			if(!interrupted)
 			{
 				if(paused)
 				{
@@ -512,7 +512,7 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 	
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
-		if(suspended)
+		if(interrupted)
 		{
 			OAL_LOG_ERROR(@"Could not load URL %@: Audio is still suspended", url);
 			return NO;
@@ -670,7 +670,7 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
-		if(suspended)
+		if(interrupted)
 		{
 			OAL_LOG_ERROR(@"Could not play: Audio is still suspended");
 			return NO;
@@ -695,7 +695,7 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
-		if(suspended)
+		if(interrupted)
 		{
 			OAL_LOG_ERROR(@"Could not play: Audio is still suspended");
 			return NO;
@@ -876,23 +876,23 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 
 #pragma mark Internal Use
 
-- (bool) suspended
+- (bool) interrupted
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
-		return suspended;
+		return interrupted;
 	}
 }
 
-- (void) setSuspended:(bool) value
+- (void) setInterrupted:(bool) value
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
-		if(suspended != value)
+		if(interrupted != value)
 		{
-			suspended = value;
+			interrupted = value;
 			[player setSuspended:value];
-			if(suspended)
+			if(interrupted)
 			{
 				currentTime = player.currentTime;
 				paused = NO;
