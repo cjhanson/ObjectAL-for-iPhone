@@ -449,6 +449,14 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 
 @synthesize playing;
 
+- (bool)playing
+{
+	OPTIONALLY_SYNCHRONIZED(self)
+	{
+		return (playing==YES && paused==NO);
+	}
+}
+
 - (NSTimeInterval) currentTime
 {
 	OPTIONALLY_SYNCHRONIZED(self)
@@ -961,6 +969,7 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 		[delegate audioPlayerDidFinishPlaying:playerIn successfully:flag];
 	}
 	
+	[[NSNotificationCenter defaultCenter] performSelectorOnMainThread:@selector(postNotification:) withObject:[NSNotification notificationWithName:OALAudioTrackStoppedPlayingNotification object:self] waitUntilDone:NO];
 	[[NSNotificationCenter defaultCenter] performSelectorOnMainThread:@selector(postNotification:) withObject:[NSNotification notificationWithName:OALAudioTrackFinishedPlayingNotification object:self] waitUntilDone:NO];
 }
 
