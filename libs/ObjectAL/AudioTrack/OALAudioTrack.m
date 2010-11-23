@@ -28,7 +28,7 @@
 #import "mach_timing.h"
 #import <AudioToolbox/AudioToolbox.h>
 #import "OALAudioActions.h"
-#import "OALAudioTracks.h"
+#import "OALAudioTrackManager.h"
 #import "OALAudioSupport.h"
 #import "OALUtilityActions.h"
 #import "ObjectALMacros.h"
@@ -255,7 +255,7 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 	if(nil != (self = [super init]))
 	{
 		// Make sure OALAudioTracks is initialized.
-		[OALAudioTracks sharedInstance];
+		[OALAudioTrackManager sharedInstance];
 		
 		operationQueue = [[NSOperationQueue alloc] init];
 		operationQueue.maxConcurrentOperationCount = 1;
@@ -276,14 +276,14 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 		gainAction	= nil;
 		panAction = nil;
 		
-		[[OALAudioTracks sharedInstance] notifyTrackInitializing:self];
+		[[OALAudioTrackManager sharedInstance] notifyTrackInitializing:self];
 	}
 	return self;
 }
 
 - (void) dealloc
 {
-	[[OALAudioTracks sharedInstance] notifyTrackDeallocating:self];
+	[[OALAudioTrackManager sharedInstance] notifyTrackDeallocating:self];
 
 	[operationQueue release];
 	[currentlyLoadedUrl release];
@@ -541,6 +541,7 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 			[player stop];
 		}
 		[player release];
+		player = nil;
 		if(playing)
 		{
 			[[NSNotificationCenter defaultCenter] performSelectorOnMainThread:@selector(postNotification:) withObject:[NSNotification notificationWithName:OALAudioTrackStoppedPlayingNotification object:self] waitUntilDone:NO];

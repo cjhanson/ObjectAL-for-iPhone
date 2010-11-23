@@ -33,7 +33,7 @@
 
 // AudioTrack
 #import "OALAudioTrack.h"
-#import "OALAudioTracks.h"
+#import "OALAudioTrackManager.h"
 #import "OALAudioTrackNotifications.h"
 
 // OpenAL

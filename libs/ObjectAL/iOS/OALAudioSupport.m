@@ -27,7 +27,7 @@
 #import "OALAudioSupport.h"
 #import "ObjectALMacros.h"
 #import <AudioToolbox/AudioToolbox.h>
-#import "OALAudioTracks.h"
+#import "OALAudioTrackManager.h"
 #import "OpenALManager.h"
 #import <UIKit/UIKit.h>
 
@@ -1002,7 +1002,7 @@ NSString *GetNSStringFrom4CharCode(unsigned long code)
 		activationAttempts = 0;
 		if(handleInterruptions && audioSessionWasActive){
 			if(!backgroundAudioWasSuspended)
-				[OALAudioTracks sharedInstance].interrupted = NO;
+				[OALAudioTrackManager sharedInstance].interrupted = NO;
 			if(!objectALWasSuspended)
 				[OpenALManager sharedInstance].interrupted = NO;
 		}
@@ -1045,6 +1045,7 @@ NSString *GetNSStringFrom4CharCode(unsigned long code)
 		interrupted = value;
 		if(interrupted){
 			audioSessionWasActive = self.audioSessionActive;
+			//Purposely not going through the setter because we are not deactivating the session (it is already deactivated)
 			audioSessionActive = NO;
 		}
 	}
@@ -1068,10 +1069,10 @@ NSString *GetNSStringFrom4CharCode(unsigned long code)
 			suspended = value;
 			if(suspended)
 			{
-				backgroundAudioWasSuspended = [OALAudioTracks sharedInstance].interrupted;
+				backgroundAudioWasSuspended = [OALAudioTrackManager sharedInstance].interrupted;
 				objectALWasSuspended = [OpenALManager sharedInstance].interrupted;
 				[OpenALManager sharedInstance].interrupted = YES;
-				[OALAudioTracks sharedInstance].interrupted = YES;
+				[OALAudioTrackManager sharedInstance].interrupted = YES;
 				
 				if(handleInterruptions && audioSessionActive){
 					audioSessionWasActive = YES;
@@ -1086,12 +1087,12 @@ NSString *GetNSStringFrom4CharCode(unsigned long code)
 						self.audioSessionActive = YES;
 					//Going to un-interrupt these after our session is reactivated successfully:
 					//[OpenALManager sharedInstance].interrupted = NO;
-					//[OALAudioTracks sharedInstance].interrupted = NO;
+					//[OALAudioTrackManager sharedInstance].interrupted = NO;
 				}
 				else
 				{
 					if(!backgroundAudioWasSuspended)
-						[OALAudioTracks sharedInstance].interrupted = NO;
+						[OALAudioTrackManager sharedInstance].interrupted = NO;
 					if(!objectALWasSuspended)
 						[OpenALManager sharedInstance].interrupted = NO;
 				}
