@@ -207,8 +207,7 @@ typedef NSInteger OALPlayerState;
 
 #pragma mark Internal Use
 
-/** (INTERNAL USE) Used by the interrupt handler to suspend the audio device
- * (if interrupts are enabled in OALAudioSupport).
+/** (INTERNAL USE) Used by the parent OALAudioTrack to keep us in sync with the suspend/interrupt state above.
  */
 @property(readwrite,assign) bool suspended;
 

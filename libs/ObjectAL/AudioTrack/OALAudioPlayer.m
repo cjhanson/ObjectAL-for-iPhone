@@ -32,6 +32,7 @@
 #import "OALAudioPlayerAudioQueueAVAssetReader.h"
 #import "OALAudioPlayerAudioQueueAudioFile.h"
 #import "OALAudioPlayerAudioUnitAVAssetReader.h"
+#import "ObjectALMacros.h"
 
 @implementation OALAudioPlayer
 
@@ -327,28 +328,33 @@
 
 #pragma mark Internal Use
 
-/** (INTERNAL USE) Used by the interrupt handler to suspend the audio device
- * (if interrupts are enabled in OALAudioSupport).
+/** (INTERNAL USE) Used by the parent OALAudioTrack to keep us in sync with the suspend/interrupt state above.
  */
 
 - (bool) suspended
 {
-	return suspended;
+	OPTIONALLY_SYNCHRONIZED(self)
+	{
+		return suspended;
+	}
 }
 
 - (void) setSuspended:(bool) value
 {
-	if(suspended != value)
+	OPTIONALLY_SYNCHRONIZED(self)
 	{
-		suspended = value;
-		if(suspended)
+		if(suspended != value)
 		{
-			//currentTime = player.currentTime;
-			[self stop];
-		}
-		else
-		{
-			
+			suspended = value;
+			if(suspended)
+			{
+				//currentTime = player.currentTime;
+				[self stop];
+			}
+			else
+			{
+				
+			}
 		}
 	}
 }

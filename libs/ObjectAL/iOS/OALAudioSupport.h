@@ -28,6 +28,7 @@
 #import <AVFoundation/AVFoundation.h>
 #import "SynthesizeSingleton.h"
 #import "ALBuffer.h"
+#import "SuspendLock.h"
 
 extern NSString *const OALAudioSessionInterruptBeginNotification;
 extern NSString *const OALAudioSessionInterruptEndNotification;
@@ -57,7 +58,7 @@ extern NSString *const OALAudioSessionInterruptEndNotification;
 	/** Operation queue for asynchronous loading. */
 	NSOperationQueue* operationQueue;
 
-	NSString* overrideAudioSessionCategory;
+	NSString* audioSessionCategory;
 
 	bool handleInterruptions;
 	bool allowIpod;
@@ -70,25 +71,14 @@ extern NSString *const OALAudioSessionInterruptEndNotification;
 	/** Delegate for interruptions */
 	id<AVAudioSessionDelegate> audioSessionDelegate;
 
-	/** If true, BackgoundAudio was already suspended when when we suspended. */
-	bool backgroundAudioWasSuspended;
-	
-	/** If true, ObjectAL was already suspended when we suspended. */
-	bool objectALWasSuspended;
-	
-	/** If true, the audio session was active when when we suspended. */
+	/** If true, the audio session was active when the interrupt occurred. */
 	bool audioSessionWasActive;
+
+	/** Manages a double-lock between suspend and interrupt */
+	SuspendLock* suspendLock;
 	
+	/** Number of times we have tried to activate the audio session. */
 	NSUInteger activationAttempts;
-	
-	/** Intended state of the audio engine. */
-	bool enabled;
-	
-	/** State of the audio engine. This can change due to interruption or by the user changing enabled */
-	bool suspended;
-	
-	/** State of Audio Session interruption */
-	bool interrupted;
 	
 	/** The time that the application was last activated. */
 	NSDate* lastActivationAttempt;
@@ -102,12 +92,14 @@ extern NSString *const OALAudioSessionInterruptEndNotification;
  * and "honorSilentSwitch" settings will be ignored, and the specified audio session
  * category will be used instead. <br>
  *
- * See the kAudioSessionProperty_AudioCategory property in the Apple developer
- * documentation for more info. <br>
+ * @see AVAudioSessionCategory
  *
- * Default value: 0
+ * Default value: nil
  */
-@property(readwrite,retain) NSString* overrideAudioSessionCategory;
+@property(readwrite,retain) NSString* audioSessionCategory;
+
+
+
 
 /** If YES, allow ipod music to continue playing (NOT SUPPORTED ON THE SIMULATOR).
  * Note: If this is enabled, and another app is playing music, background audio
@@ -121,7 +113,7 @@ extern NSString *const OALAudioSessionInterruptEndNotification;
  */
 @property(readwrite,assign) bool allowIpod;
 
-/** If YES, ipod music will duck (lower in volume) when your app plays a sound.
+/** If YES, ipod music will duck (lower in volume) when the audio session activates.
  *
  * Default value: NO
  */
@@ -158,6 +150,9 @@ extern NSString *const OALAudioSessionInterruptEndNotification;
  * Default value: YES
  */
 @property(readwrite,assign) bool handleInterruptions;
+
+/** Delegate that will receive all audio session events.
+ */
 @property(readwrite,assign) id<AVAudioSessionDelegate> audioSessionDelegate;
 
 /** If true, another application (usually iPod) is playing music. */
@@ -166,14 +161,13 @@ extern NSString *const OALAudioSessionInterruptEndNotification;
 /** If true, the audio session is active */
 @property(readwrite,assign) bool audioSessionActive;
 
-/** If true, the audio is suspended */
-@property(readwrite, assign) bool enabled;
+/** If YES, this object is suspended.
+ * Note: Suspending deactivates the audio session.
+ */
+@property(readwrite,assign) bool suspended;
 
-/** If true, the audio is suspended */
-@property(readonly, assign) bool suspended;
-
-/** If true, the audio session is interrupted */
-@property(readonly, assign) bool interrupted;
+/** If YES, this object is interrupted. */
+@property(readonly) bool interrupted;
 
 /** Get the device's final hardware output volume, as controlled by
  * the volume button on the side of the device.
@@ -257,6 +251,13 @@ SYNTHESIZE_SINGLETON_FOR_CLASS_HEADER(OALAudioSupport);
 
 
 #pragma mark Utility
+
+/** Force an interrupt end.  This can be useful in cases where a buggy OS
+ * fails to end an interrupt.
+ *
+ * @param informDelegate If YES, also invoke "endInterruption" on the delegate.
+ */
+- (void) forceEndInterruption:(bool) informDelegate;
 
 /** Get the corresponding URL for a file path.
  *

@@ -91,38 +91,21 @@
  */
 #define OBJECTAL_CFG_SYNCHRONIZED_OPERATIONS 1
 
-/** When this option is greater than zero, ObjectAL will output log entries for that correspond to the LEVEL.
- * LEVEL = 0 // No output
- * LEVEL = 1 // Errors only
- * LEVEL = 2 // Errors & Warnings
- * LEVEL = 3 // Errors, Warnings & Info
- * In general, setting this to zero won't help performance since the log code only gets called
- * when an error occurs.  There can be a slight improvement, however, since it won't even
- * check return codes in many cases. <br>
- *
- * Recommended setting: 1
- */
-#if DEBUG
-#define OBJECTAL_CFG_LOG_LEVEL 3
-#else
-#define OBJECTAL_CFG_LOG_LEVEL 1
-#endif
 
-
-/** There are various cases with certain iOS versions where the audio session will receive an
- * "interrupt begin" event, but no corresponding "interrupt end" event, causing the OpenAL context
- * to remain disabled. <br>
- * If this option is enabled, it will add extra processing to all ALSource, ALListener,
- * and ALContext operations to ensure that the context is set up properly. <br>
+/** When this option is other than LEVEL_NONE, ObjectAL will output log entries that correspond
+ * to the LEVEL:
  *
- * This bug is known to surface in iOS 4.0 when you start playback using MPMusicPlayerController,
- * and when locking/unlocking the device in iOS 4.2 GM.  The lock/unlock bug is already handled
- * elsewhere, so the only time you'd actually need to have this set is if you're using
- * MPMusicPlayerController and expect the app to be run on an iOS 4.0 (rather than 4.1 or 4.2) device.
+ * LEVEL_NONE:    No output
+ * LEVEL_ERROR:   Errors only
+ * LEVEL_WARNING: Errors, Warnings
+ * LEVEL_INFO:    Errors, Warnings, Info
+ * LEVEL_DEBUG:   Errors, Warnings, Info, Debug
  *
- * Recommended setting: 1 if you're using MPMusicPlayerController, 0 otherwise.
+ * Setting this to LEVEL_NONE will cause most internal functions to not bother checking error codes.
+ *
+ * Recommended setting: LEVEL_WARNING
  */
-#define OBJECTAL_CFG_INTERRUPT_BUG_WORKAROUND 0
+#define OBJECTAL_CFG_LOG_LEVEL LEVEL_DEBUG
 
 
 /** The CLANG/LLVM 1.5 compiler that ships with XCode 3.2.3 fails when compiling a method
@@ -135,7 +118,7 @@
  *
  * Note: This only takes effect if the CLANG compiler is used (__clang__ == 1) <br>
  *
- * Recommended setting: 1
+ * Recommended setting: 1 for XCode 3.2.3, 0 for others.
  */
 #define OBJECTAL_CFG_CLANG_LLVM_BUG_WORKAROUND 1
 

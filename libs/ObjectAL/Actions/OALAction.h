@@ -300,7 +300,6 @@ COCOS2D_SUBCLASS_HEADER(OALAction, CCIntervalAction);
 			   endValue:(float) endValue
 			   function:(id<OALFunction,NSObject>) function;
 
-
 #pragma mark Utility
 
 /** Get the function that this action would use by default if none was specified. */

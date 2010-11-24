@@ -254,14 +254,14 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 {
 	if(nil != (self = [super init]))
 	{
-		// Make sure OALAudioTracks is initialized.
+		OAL_LOG_DEBUG(@"%@: Init", self);
+		// Make sure OALAudioTrackManager is initialized.
 		[OALAudioTrackManager sharedInstance];
 		
 		operationQueue = [[NSOperationQueue alloc] init];
 		operationQueue.maxConcurrentOperationCount = 1;
 		
 		meteringEnabled = false;
-		interrupted = false;
 		player = nil;
 		currentlyLoadedUrl = nil;
 		paused = false;
@@ -275,6 +275,9 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 		currentTime = 0.0;
 		gainAction	= nil;
 		panAction = nil;
+		suspendLock = [[SuspendLock lockWithTarget:self
+									  lockSelector:@selector(onSuspend)
+									unlockSelector:@selector(onUnsuspend)] retain];
 		
 		[[OALAudioTrackManager sharedInstance] notifyTrackInitializing:self];
 	}
@@ -283,6 +286,7 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 
 - (void) dealloc
 {
+	OAL_LOG_DEBUG(@"%@: Dealloc", self);
 	[[OALAudioTrackManager sharedInstance] notifyTrackDeallocating:self];
 
 	[operationQueue release];
@@ -293,6 +297,7 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 	[gainAction release];
 	[panAction stopAction];
 	[panAction release];
+	[suspendLock release];
 	[super dealloc];
 }
 
@@ -422,23 +427,24 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 		if(paused != value)
 		{
 			paused = value;
-			if(!interrupted)
+			if(paused)
 			{
-				if(paused)
+				OAL_LOG_DEBUG(@"%@: Pause", self);
+				[player pause];
+				if(playing)
 				{
-					[player pause];
-					if(playing)
-					{
-						[[NSNotificationCenter defaultCenter] performSelectorOnMainThread:@selector(postNotification:) withObject:[NSNotification notificationWithName:OALAudioTrackStoppedPlayingNotification object:self] waitUntilDone:NO];
-					}
+					[[NSNotificationCenter defaultCenter] performSelectorOnMainThread:@selector(postNotification:)
+																		   withObject:[NSNotification notificationWithName:OALAudioTrackStoppedPlayingNotification object:self] waitUntilDone:NO];
 				}
-				else if(playing)
+			}
+			else if(playing)
+			{
+				OAL_LOG_DEBUG(@"%@: Unpause", self);
+				playing = [player play];
+				if(playing)
 				{
-					playing = [player play];
-					if(playing)
-					{
-						[[NSNotificationCenter defaultCenter] performSelectorOnMainThread:@selector(postNotification:) withObject:[NSNotification notificationWithName:OALAudioTrackStartedPlayingNotification object:self] waitUntilDone:NO];
-					}
+					[[NSNotificationCenter defaultCenter] performSelectorOnMainThread:@selector(postNotification:)
+																		   withObject:[NSNotification notificationWithName:OALAudioTrackStartedPlayingNotification object:self] waitUntilDone:NO];
 				}
 			}
 		}
@@ -461,10 +467,7 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
-		if(player)
-			return player.currentTime;
-		else
-			return currentTime;
+		return (nil == player) ? currentTime : player.currentTime;
 	}
 }
 
@@ -473,8 +476,10 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
 		currentTime = value;
-		if(player)
+		if(nil != player)
+		{
 			player.currentTime = currentTime;
+		}
 	}
 }
 
@@ -482,7 +487,11 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
-		return player.deviceCurrentTime;
+		if(nil != player)
+		{
+			return player.deviceCurrentTime;
+		}
+		return -1;
 	}
 }
 
@@ -502,6 +511,145 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 	}
 }
 
+/** Called by SuspendLock to suspend this object.
+ */
+- (void) onSuspend
+{
+	OAL_LOG_DEBUG(@"Track suspended.");
+	
+	//Just aborting actions
+	if(gainAction){
+		[self stopFade];
+	}
+	
+	if(panAction){
+		[self stopPan];
+	}
+	
+	playerStateBeforeSuspension = player.state;
+	player.suspended = YES;
+	playing = player.isPlaying;
+	paused = (player.state == OALPlayerStatePaused);
+	
+	OAL_LOG_DEBUG(@"Player state before: %d now: %d. Playing: %s, Paused: %s", playerStateBeforeSuspension, player.state, playing?"Y":"N", paused?"Y":"N");
+	
+	if((playerStateBeforeSuspension == OALPlayerStatePlaying) && (player.state != OALPlayerStatePlaying)){
+		OAL_LOG_DEBUG(@"Dispatching stopped playing notification");
+		[[NSNotificationCenter defaultCenter] performSelectorOnMainThread:@selector(postNotification:) withObject:[NSNotification notificationWithName:OALAudioTrackStoppedPlayingNotification object:self] waitUntilDone:NO];
+	}
+	/*
+	 if(playing && !paused)
+	 {
+	 OAL_LOG_DEBUG(@"Pausing player");
+	 currentTime = player.currentTime;
+	 [player pause];
+	 }
+	 */
+}
+
+/** Called by SuspendLock to unsuspend this object.
+ */
+- (void) onUnsuspend
+{
+	OAL_LOG_DEBUG(@"Track Unsuspended.");
+//	OALPlayerState playerStateBeforeUnsuspension = player.state;
+	player.suspended = NO;
+	
+	if(playerStateBeforeSuspension != player.state){
+		OAL_LOG_DEBUG(@"Player state before: %d now: %d. Playing: %s, Paused: %s", playerStateBeforeSuspension, player.state, playing?"Y":"N", paused?"Y":"N");
+		bool startPlayback = NO;
+		bool stopPlayback = NO;
+		bool pausePlayback = NO;
+		switch(playerStateBeforeSuspension){
+			case OALPlayerStateClosed:
+				break;
+			case OALPlayerStateNotReady:
+				break;
+			case OALPlayerStateStopped:
+				stopPlayback = YES;
+				break;
+			case OALPlayerStatePlaying:
+				startPlayback = YES;
+				break;
+			case OALPlayerStatePaused:
+				startPlayback = YES;
+				pausePlayback = YES;
+				break;
+			case OALPlayerStateSeeking:
+				//just tell it to play
+				if(player.state != OALPlayerStatePlaying){
+					startPlayback = YES;
+				}
+				break;
+			default:
+				//Undefined state
+				break;
+		}
+		
+		bool didStopPlayback = NO;
+		bool didStartPlayback = NO;
+		
+		if(startPlayback){
+			OAL_LOG_DEBUG(@"Telling player to play");
+			didStartPlayback = (!playing || paused);
+			playing = [player play];
+			paused = NO;
+		}else if(stopPlayback){
+			OAL_LOG_DEBUG(@"Telling player to stop");
+			didStopPlayback = (playing && !paused);
+			[player stop];
+			playing = NO;
+			paused = NO;
+		}else if(pausePlayback){
+			OAL_LOG_DEBUG(@"Telling player to play then pause");
+			didStopPlayback = (playing && !paused);
+			playing = [player play];
+			paused = YES;
+			[player pause];
+		}
+		
+		if(didStopPlayback){
+			OAL_LOG_DEBUG(@"Dispatching stopped playing notification");
+			[[NSNotificationCenter defaultCenter] performSelectorOnMainThread:@selector(postNotification:) withObject:[NSNotification notificationWithName:OALAudioTrackStoppedPlayingNotification object:self] waitUntilDone:NO];
+		}else if(didStartPlayback){
+			OAL_LOG_DEBUG(@"Dispatching started playing notification");
+			[[NSNotificationCenter defaultCenter] performSelectorOnMainThread:@selector(postNotification:) withObject:[NSNotification notificationWithName:OALAudioTrackStartedPlayingNotification object:self] waitUntilDone:NO];
+		}
+	}
+	/*
+	if(playing && !paused)
+	{
+		OAL_LOG_DEBUG(@"Playing player");
+		player.currentTime = currentTime;
+		[player play];
+	}
+	 */
+}
+
+- (bool) suspended
+{
+	// No need to synchronize since SuspendLock does that already.
+	return suspendLock.suspendLock;
+}
+
+- (void) setSuspended:(bool) value
+{
+	// No need to synchronize since SuspendLock does that already.
+	suspendLock.suspendLock = value;
+}
+
+- (bool) interrupted
+{
+	// No need to synchronize since SuspendLock does that already.
+	return suspendLock.interruptLock;
+}
+
+- (void) setInterrupted:(bool) value
+{
+	// No need to synchronize since SuspendLock does that already.
+	suspendLock.interruptLock = value;
+}
+
 
 #pragma mark Playback
 
@@ -514,20 +662,17 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 {
 	if(nil == url)
 	{
-		OAL_LOG_ERROR(@"Cannot open NULL file / url");
+		OAL_LOG_ERROR(@"%@: Cannot open NULL file / url", self);
 		return NO;
 	}
 	
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
-		if(interrupted)
-		{
-			OAL_LOG_ERROR(@"Could not load URL %@: Audio is still suspended", url);
-			return NO;
-		}
-		
-		// Only load if it's not the same URL as last time.
-		if([[url path] isEqualToString:[currentlyLoadedUrl path]])
+		bool alreadyLoaded = [[url absoluteString] isEqualToString:[currentlyLoadedUrl absoluteString]];
+		OAL_LOG_DEBUG_COND(alreadyLoaded, @"%@: %@: URL already preloaded", self, url);
+
+		// Mimic a successful load
+		if(alreadyLoaded)
 		{
 			[self performSelector:@selector(postTrackSourceChangedNotification:) withObject:nil afterDelay:0.01];
 			return YES;
@@ -679,12 +824,6 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
-		if(interrupted)
-		{
-			OAL_LOG_ERROR(@"Could not play: Audio is still suspended");
-			return NO;
-		}
-		
 		[self stopActions];
 		SIMULATOR_BUG_WORKAROUND_PREPARE_PLAYBACK();
 		player.currentTime = currentTime;
@@ -704,12 +843,6 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
-		if(interrupted)
-		{
-			OAL_LOG_ERROR(@"Could not play: Audio is still suspended");
-			return NO;
-		}
-		
 		[self stopActions];
 		SIMULATOR_BUG_WORKAROUND_PREPARE_PLAYBACK();
 		player.currentTime = currentTime;
@@ -732,7 +865,7 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 		[self stopActions];
 		currentTime = player.currentTime;
 		[player stop];
-		if(playing)
+		if(playing && !paused)
 		{
 			[[NSNotificationCenter defaultCenter] performSelectorOnMainThread:@selector(postNotification:) withObject:[NSNotification notificationWithName:OALAudioTrackStoppedPlayingNotification object:self] waitUntilDone:NO];
 		}
@@ -824,17 +957,15 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 		[player stop];
 		[player release];
 		player = nil;
-		
-		if(playing)
-		{
-			[[NSNotificationCenter defaultCenter] performSelectorOnMainThread:@selector(postNotification:) withObject:[NSNotification notificationWithName:OALAudioTrackStoppedPlayingNotification object:self] waitUntilDone:NO];
-		}
-		
-		self.currentTime = 0;
-		
-		playing = NO;
 		paused = NO;
 		muted = NO;
+		self.currentTime = 0;
+
+		if(playing)
+		{
+			playing = NO;
+			[[NSNotificationCenter defaultCenter] performSelectorOnMainThread:@selector(postNotification:) withObject:[NSNotification notificationWithName:OALAudioTrackStoppedPlayingNotification object:self] waitUntilDone:NO];
+		}
 	}
 }
 
@@ -882,42 +1013,6 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 	}
 }
 
-
-#pragma mark Internal Use
-
-- (bool) interrupted
-{
-	OPTIONALLY_SYNCHRONIZED(self)
-	{
-		return interrupted;
-	}
-}
-
-- (void) setInterrupted:(bool) value
-{
-	OPTIONALLY_SYNCHRONIZED(self)
-	{
-		if(interrupted != value)
-		{
-			interrupted = value;
-			[player setSuspended:value];
-			if(interrupted)
-			{
-				if(nil != player)
-					currentTime = player.currentTime;
-				paused = NO;
-				playing = NO;
-//				[self stop];
-			}
-			else
-			{
-				if(playing && !paused)
-				{
-				}
-			}
-		}
-	}
-}
 
 #pragma mark -
 #pragma mark OALAudioPlayerDelegate

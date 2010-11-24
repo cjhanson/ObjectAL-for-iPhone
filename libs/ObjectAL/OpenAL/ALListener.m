@@ -45,10 +45,18 @@
 	{
 		context = contextIn;
 		gain = 1.0f;
+		suspendLock = [[SuspendLock lockWithTarget:nil
+									  lockSelector:nil
+									unlockSelector:nil] retain];
 	}
 	return self;
 }
 
+- (void) dealloc
+{
+	[suspendLock release];
+	[super dealloc];
+}
 
 #pragma mark Properties
 
@@ -66,6 +74,12 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		if(suspendLock.locked)
+		{
+			OAL_LOG_DEBUG(@"%@: Called mutator on suspended object", self);
+			return;
+		}
+		
 		muted = value;
 		float resultingGain = muted ? 0 : gain;
 		self.gain = resultingGain;
@@ -84,12 +98,17 @@
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
+		if(suspendLock.locked)
+		{
+			OAL_LOG_DEBUG(@"%@: Called mutator on suspended object", self);
+			return;
+		}
+		
 		gain = value;
 		if(muted)
 		{
 			value = 0;
 		}
-		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper listenerf:AL_GAIN value:value];
 	}
 }
@@ -99,7 +118,6 @@
 	ALOrientation result;
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
-		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper getListenerfv:AL_ORIENTATION values:(float*)&result];
 	}
 	return result;
@@ -109,7 +127,12 @@
 {
 	OPTIONALLY_SYNCHRONIZED_STRUCT_OP(self)
 	{
-		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
+		if(suspendLock.locked)
+		{
+			OAL_LOG_DEBUG(@"%@: Called mutator on suspended object", self);
+			return;
+		}
+		
 		[ALWrapper listenerfv:AL_ORIENTATION values:(float*)&value];
 	}
 }
@@ -119,7 +142,6 @@
 	ALPoint result;
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
-		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper getListener3f:AL_POSITION v1:&result.x v2:&result.y v3:&result.z];
 	}
 	return result;
@@ -129,7 +151,12 @@
 {
 	OPTIONALLY_SYNCHRONIZED_STRUCT_OP(self)
 	{
-		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
+		if(suspendLock.locked)
+		{
+			OAL_LOG_DEBUG(@"%@: Called mutator on suspended object", self);
+			return;
+		}
+		
 		[ALWrapper listener3f:AL_POSITION v1:value.x v2:value.y v3:value.z];
 	}
 }
@@ -139,7 +166,6 @@
 	ALVector result;
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
-		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
 		[ALWrapper getListener3f:AL_VELOCITY v1:&result.x v2:&result.y v3:&result.z];
 	}
 	return result;
@@ -149,9 +175,38 @@
 {
 	OPTIONALLY_SYNCHRONIZED_STRUCT_OP(self)
 	{
-		OBJECTAL_INTERRUPT_BUG_WORKAROUND();
+		if(suspendLock.locked)
+		{
+			OAL_LOG_DEBUG(@"%@: Called mutator on suspended object", self);
+			return;
+		}
+		
 		[ALWrapper listener3f:AL_VELOCITY v1:value.x v2:value.y v3:value.z];
 	}
+}
+
+- (bool) suspended
+{
+	// No need to synchronize since SuspendLock does that already.
+	return suspendLock.suspendLock;
+}
+
+- (void) setSuspended:(bool) value
+{
+	// No need to synchronize since SuspendLock does that already.
+	suspendLock.suspendLock = value;
+}
+
+- (bool) interrupted
+{
+	// No need to synchronize since SuspendLock does that already.
+	return suspendLock.interruptLock;
+}
+
+- (void) setInterrupted:(bool) value
+{
+	// No need to synchronize since SuspendLock does that already.
+	suspendLock.interruptLock = value;
 }
 
 @end

@@ -28,6 +28,7 @@
 #import "OALAction.h"
 #import "OALAudioTrackNotifications.h"
 #import "OALAudioPlayer.h"
+#import "SuspendLock.h"
 
 /**
  * Plays an audio track via whatever API is neccessary for the given file type and location.
@@ -37,7 +38,6 @@
 @interface OALAudioTrack : NSObject <OALAudioPlayerDelegate>
 {
 	bool meteringEnabled;
-	bool interrupted;
 	OALAudioPlayer* player;
 	NSURL* currentlyLoadedUrl;
 	bool paused;
@@ -64,6 +64,7 @@
 	 * sometimes say it's not playing when it actually is.
 	 */
 	bool playing;
+	OALPlayerState playerStateBeforeSuspension;
 	NSTimeInterval currentTime;
 	
 	/** The current action being applied to gain. */
@@ -71,6 +72,9 @@
 	
 	/** The current action being applied to pan. */
 	OALAction* panAction;
+	
+	/** Manages a double-lock between suspend and interrupt */
+	SuspendLock* suspendLock;
 }
 
 + (void) setPreferredPlayerType:(OALAudioPlayerType)aPlayerType;
@@ -146,6 +150,12 @@
 
 /** The number of channels in the currently loaded sound. */
 @property(readonly) NSUInteger numberOfChannels;
+
+/** If YES, this object is suspended. */
+@property(readwrite,assign) bool suspended;
+
+/** If YES, this object is interrupted. */
+@property(readonly) bool interrupted;
 
 
 #pragma mark Object Management
@@ -413,9 +423,5 @@
 
 - (void) postTrackSourceChangedNotification:(NSNotification *)notification;
 
-/** (INTERNAL USE) Used by the interrupt handler to suspend the audio device
- * (if interrupts are enabled in OALAudioSupport).
- */
-@property(readwrite,assign) bool interrupted;
 
 @end
