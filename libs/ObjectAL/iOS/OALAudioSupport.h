@@ -70,25 +70,28 @@ extern NSString *const OALAudioSessionInterruptEndNotification;
 	/** Delegate for interruptions */
 	id<AVAudioSessionDelegate> audioSessionDelegate;
 
-	/** If true, BackgoundAudio was already suspended when the interrupt occurred. */
+	/** If true, BackgoundAudio was already suspended when when we suspended. */
 	bool backgroundAudioWasSuspended;
 	
-	/** If true, ObjectAL was already suspended when the interrupt occurred. */
+	/** If true, ObjectAL was already suspended when we suspended. */
 	bool objectALWasSuspended;
 	
-	/** If true, the audio session was active when the interrupt occurred. */
+	/** If true, the audio session was active when when we suspended. */
 	bool audioSessionWasActive;
 	
 	NSUInteger activationAttempts;
 	
-	/** State of the audio engine. This can change due to interruption or be set by the user */
+	/** Intended state of the audio engine. */
+	bool enabled;
+	
+	/** State of the audio engine. This can change due to interruption or by the user changing enabled */
 	bool suspended;
 	
 	/** State of Audio Session interruption */
 	bool interrupted;
 	
 	/** The time that the application was last activated. */
-	NSDate* lastActivated;
+	NSDate* lastActivationAttempt;
 }
 
 
@@ -164,9 +167,13 @@ extern NSString *const OALAudioSessionInterruptEndNotification;
 @property(readwrite,assign) bool audioSessionActive;
 
 /** If true, the audio is suspended */
-@property(readwrite, assign) bool suspended;
+@property(readwrite, assign) bool enabled;
 
-//@property(readwrite, assign) bool interrupted;
+/** If true, the audio is suspended */
+@property(readonly, assign) bool suspended;
+
+/** If true, the audio session is interrupted */
+@property(readonly, assign) bool interrupted;
 
 /** Get the device's final hardware output volume, as controlled by
  * the volume button on the side of the device.
