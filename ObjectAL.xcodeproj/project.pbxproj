@@ -23,6 +23,25 @@
 /* Begin PBXBuildFile section */
 		1D60589B0D05DD56006BFB54 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.m */; };
 		1F3B9A2D0EF2145700286867 /* ObjectALAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 1F3B9A2B0EF2145700286867 /* ObjectALAppDelegate.m */; };
+		3749A93B12A1EB640045E750 /* OALAudioPlayer.h in Headers */ = {isa = PBXBuildFile; fileRef = 3749A92912A1EB630045E750 /* OALAudioPlayer.h */; };
+		3749A93C12A1EB640045E750 /* OALAudioPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 3749A92A12A1EB630045E750 /* OALAudioPlayer.m */; };
+		3749A93D12A1EB640045E750 /* OALAudioPlayerAudioQueueAudioFile.h in Headers */ = {isa = PBXBuildFile; fileRef = 3749A92B12A1EB630045E750 /* OALAudioPlayerAudioQueueAudioFile.h */; };
+		3749A93E12A1EB640045E750 /* OALAudioPlayerAudioQueueAudioFile.m in Sources */ = {isa = PBXBuildFile; fileRef = 3749A92C12A1EB630045E750 /* OALAudioPlayerAudioQueueAudioFile.m */; };
+		3749A93F12A1EB640045E750 /* OALAudioPlayerAudioQueueAVAssetReader.h in Headers */ = {isa = PBXBuildFile; fileRef = 3749A92D12A1EB630045E750 /* OALAudioPlayerAudioQueueAVAssetReader.h */; };
+		3749A94012A1EB640045E750 /* OALAudioPlayerAudioQueueAVAssetReader.m in Sources */ = {isa = PBXBuildFile; fileRef = 3749A92E12A1EB630045E750 /* OALAudioPlayerAudioQueueAVAssetReader.m */; };
+		3749A94112A1EB640045E750 /* OALAudioPlayerAudioUnitAVAssetReader.h in Headers */ = {isa = PBXBuildFile; fileRef = 3749A92F12A1EB630045E750 /* OALAudioPlayerAudioUnitAVAssetReader.h */; };
+		3749A94212A1EB640045E750 /* OALAudioPlayerAudioUnitAVAssetReader.m in Sources */ = {isa = PBXBuildFile; fileRef = 3749A93012A1EB630045E750 /* OALAudioPlayerAudioUnitAVAssetReader.m */; };
+		3749A94312A1EB640045E750 /* OALAudioPlayerAVAudioPlayer.h in Headers */ = {isa = PBXBuildFile; fileRef = 3749A93112A1EB630045E750 /* OALAudioPlayerAVAudioPlayer.h */; };
+		3749A94412A1EB640045E750 /* OALAudioPlayerAVAudioPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 3749A93212A1EB630045E750 /* OALAudioPlayerAVAudioPlayer.m */; };
+		3749A94512A1EB640045E750 /* OALAudioPlayerAVPlayer.h in Headers */ = {isa = PBXBuildFile; fileRef = 3749A93312A1EB630045E750 /* OALAudioPlayerAVPlayer.h */; };
+		3749A94612A1EB640045E750 /* OALAudioPlayerAVPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 3749A93412A1EB630045E750 /* OALAudioPlayerAVPlayer.m */; };
+		3749A94712A1EB640045E750 /* OALAudioTrack.h in Headers */ = {isa = PBXBuildFile; fileRef = 3749A93512A1EB630045E750 /* OALAudioTrack.h */; };
+		3749A94812A1EB640045E750 /* OALAudioTrack.m in Sources */ = {isa = PBXBuildFile; fileRef = 3749A93612A1EB630045E750 /* OALAudioTrack.m */; };
+		3749A94912A1EB640045E750 /* OALAudioTrackManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 3749A93712A1EB640045E750 /* OALAudioTrackManager.h */; };
+		3749A94A12A1EB640045E750 /* OALAudioTrackManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 3749A93812A1EB640045E750 /* OALAudioTrackManager.m */; };
+		3749A94B12A1EB640045E750 /* OALAudioTrackNotifications.h in Headers */ = {isa = PBXBuildFile; fileRef = 3749A93912A1EB640045E750 /* OALAudioTrackNotifications.h */; };
+		3749A94C12A1EB640045E750 /* OALAudioTrackNotifications.m in Sources */ = {isa = PBXBuildFile; fileRef = 3749A93A12A1EB640045E750 /* OALAudioTrackNotifications.m */; };
+		3749A96112A1EBD90045E750 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3749A96012A1EBD90045E750 /* CoreMedia.framework */; };
 		390EE7E7128355F10009054E /* CCAction.h in Headers */ = {isa = PBXBuildFile; fileRef = 390EE73F128355F00009054E /* CCAction.h */; };
 		390EE7E8128355F10009054E /* CCAction.m in Sources */ = {isa = PBXBuildFile; fileRef = 390EE740128355F00009054E /* CCAction.m */; };
 		390EE7E9128355F10009054E /* CCActionManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 390EE741128355F00009054E /* CCActionManager.h */; };
@@ -195,18 +214,12 @@
 		39367EE8129B9D290015B697 /* SuspendLock.m in Sources */ = {isa = PBXBuildFile; fileRef = 39367EE6129B9D290015B697 /* SuspendLock.m */; };
 		395FE7E71268C64100A8BD6A /* HardwareDemo.h in Headers */ = {isa = PBXBuildFile; fileRef = 395FE7E51268C64100A8BD6A /* HardwareDemo.h */; };
 		395FE7E81268C64100A8BD6A /* HardwareDemo.m in Sources */ = {isa = PBXBuildFile; fileRef = 395FE7E61268C64100A8BD6A /* HardwareDemo.m */; };
-		395FE91A126936ED00A8BD6A /* OALAudioTrackNotifications.h in Headers */ = {isa = PBXBuildFile; fileRef = 395FE918126936ED00A8BD6A /* OALAudioTrackNotifications.h */; };
-		395FE91B126936ED00A8BD6A /* OALAudioTrackNotifications.m in Sources */ = {isa = PBXBuildFile; fileRef = 395FE919126936ED00A8BD6A /* OALAudioTrackNotifications.m */; };
 		396B395F124EDA43009B84A4 /* OALAction.h in Headers */ = {isa = PBXBuildFile; fileRef = 396B392E124EDA42009B84A4 /* OALAction.h */; };
 		396B3960124EDA43009B84A4 /* OALAction.m in Sources */ = {isa = PBXBuildFile; fileRef = 396B392F124EDA42009B84A4 /* OALAction.m */; };
 		396B3961124EDA43009B84A4 /* OALActionManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 396B3930124EDA42009B84A4 /* OALActionManager.h */; };
 		396B3962124EDA43009B84A4 /* OALActionManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 396B3931124EDA42009B84A4 /* OALActionManager.m */; };
 		396B3963124EDA43009B84A4 /* OALFunction.h in Headers */ = {isa = PBXBuildFile; fileRef = 396B3932124EDA42009B84A4 /* OALFunction.h */; };
 		396B3964124EDA43009B84A4 /* OALFunction.m in Sources */ = {isa = PBXBuildFile; fileRef = 396B3933124EDA42009B84A4 /* OALFunction.m */; };
-		396B3965124EDA43009B84A4 /* OALAudioTrack.h in Headers */ = {isa = PBXBuildFile; fileRef = 396B3935124EDA42009B84A4 /* OALAudioTrack.h */; };
-		396B3966124EDA43009B84A4 /* OALAudioTrack.m in Sources */ = {isa = PBXBuildFile; fileRef = 396B3936124EDA42009B84A4 /* OALAudioTrack.m */; };
-		396B3967124EDA43009B84A4 /* OALAudioTracks.h in Headers */ = {isa = PBXBuildFile; fileRef = 396B3937124EDA42009B84A4 /* OALAudioTracks.h */; };
-		396B3968124EDA43009B84A4 /* OALAudioTracks.m in Sources */ = {isa = PBXBuildFile; fileRef = 396B3938124EDA42009B84A4 /* OALAudioTracks.m */; };
 		396B396D124EDA43009B84A4 /* ObjectAL.h in Headers */ = {isa = PBXBuildFile; fileRef = 396B393F124EDA42009B84A4 /* ObjectAL.h */; };
 		396B396E124EDA43009B84A4 /* ObjectALConfig.h in Headers */ = {isa = PBXBuildFile; fileRef = 396B3940124EDA42009B84A4 /* ObjectALConfig.h */; };
 		396B3970124EDA43009B84A4 /* ALBuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = 396B3943124EDA42009B84A4 /* ALBuffer.h */; };
@@ -343,6 +356,25 @@
 		1F3B9A2C0EF2145700286867 /* ObjectALAppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ObjectALAppDelegate.h; path = Classes/ObjectALAppDelegate.h; sourceTree = SOURCE_ROOT; };
 		1F3B9A820EF2151B00286867 /* ObjectAL_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ObjectAL_Prefix.pch; sourceTree = SOURCE_ROOT; };
 		29B97316FDCFA39411CA2CEA /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		3749A92912A1EB630045E750 /* OALAudioPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OALAudioPlayer.h; sourceTree = "<group>"; };
+		3749A92A12A1EB630045E750 /* OALAudioPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OALAudioPlayer.m; sourceTree = "<group>"; };
+		3749A92B12A1EB630045E750 /* OALAudioPlayerAudioQueueAudioFile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OALAudioPlayerAudioQueueAudioFile.h; sourceTree = "<group>"; };
+		3749A92C12A1EB630045E750 /* OALAudioPlayerAudioQueueAudioFile.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OALAudioPlayerAudioQueueAudioFile.m; sourceTree = "<group>"; };
+		3749A92D12A1EB630045E750 /* OALAudioPlayerAudioQueueAVAssetReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OALAudioPlayerAudioQueueAVAssetReader.h; sourceTree = "<group>"; };
+		3749A92E12A1EB630045E750 /* OALAudioPlayerAudioQueueAVAssetReader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OALAudioPlayerAudioQueueAVAssetReader.m; sourceTree = "<group>"; };
+		3749A92F12A1EB630045E750 /* OALAudioPlayerAudioUnitAVAssetReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OALAudioPlayerAudioUnitAVAssetReader.h; sourceTree = "<group>"; };
+		3749A93012A1EB630045E750 /* OALAudioPlayerAudioUnitAVAssetReader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OALAudioPlayerAudioUnitAVAssetReader.m; sourceTree = "<group>"; };
+		3749A93112A1EB630045E750 /* OALAudioPlayerAVAudioPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OALAudioPlayerAVAudioPlayer.h; sourceTree = "<group>"; };
+		3749A93212A1EB630045E750 /* OALAudioPlayerAVAudioPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OALAudioPlayerAVAudioPlayer.m; sourceTree = "<group>"; };
+		3749A93312A1EB630045E750 /* OALAudioPlayerAVPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OALAudioPlayerAVPlayer.h; sourceTree = "<group>"; };
+		3749A93412A1EB630045E750 /* OALAudioPlayerAVPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OALAudioPlayerAVPlayer.m; sourceTree = "<group>"; };
+		3749A93512A1EB630045E750 /* OALAudioTrack.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OALAudioTrack.h; sourceTree = "<group>"; };
+		3749A93612A1EB630045E750 /* OALAudioTrack.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OALAudioTrack.m; sourceTree = "<group>"; };
+		3749A93712A1EB640045E750 /* OALAudioTrackManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OALAudioTrackManager.h; sourceTree = "<group>"; };
+		3749A93812A1EB640045E750 /* OALAudioTrackManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OALAudioTrackManager.m; sourceTree = "<group>"; };
+		3749A93912A1EB640045E750 /* OALAudioTrackNotifications.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OALAudioTrackNotifications.h; sourceTree = "<group>"; };
+		3749A93A12A1EB640045E750 /* OALAudioTrackNotifications.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OALAudioTrackNotifications.m; sourceTree = "<group>"; };
+		3749A96012A1EBD90045E750 /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
 		390EE73F128355F00009054E /* CCAction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CCAction.h; sourceTree = "<group>"; };
 		390EE740128355F00009054E /* CCAction.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CCAction.m; sourceTree = "<group>"; };
 		390EE741128355F00009054E /* CCActionManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CCActionManager.h; sourceTree = "<group>"; };
@@ -517,18 +549,12 @@
 		39367EE6129B9D290015B697 /* SuspendLock.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SuspendLock.m; sourceTree = "<group>"; };
 		395FE7E51268C64100A8BD6A /* HardwareDemo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HardwareDemo.h; sourceTree = "<group>"; };
 		395FE7E61268C64100A8BD6A /* HardwareDemo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = HardwareDemo.m; sourceTree = "<group>"; };
-		395FE918126936ED00A8BD6A /* OALAudioTrackNotifications.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OALAudioTrackNotifications.h; sourceTree = "<group>"; };
-		395FE919126936ED00A8BD6A /* OALAudioTrackNotifications.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OALAudioTrackNotifications.m; sourceTree = "<group>"; };
 		396B392E124EDA42009B84A4 /* OALAction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OALAction.h; sourceTree = "<group>"; };
 		396B392F124EDA42009B84A4 /* OALAction.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OALAction.m; sourceTree = "<group>"; };
 		396B3930124EDA42009B84A4 /* OALActionManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OALActionManager.h; sourceTree = "<group>"; };
 		396B3931124EDA42009B84A4 /* OALActionManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OALActionManager.m; sourceTree = "<group>"; };
 		396B3932124EDA42009B84A4 /* OALFunction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OALFunction.h; sourceTree = "<group>"; };
 		396B3933124EDA42009B84A4 /* OALFunction.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OALFunction.m; sourceTree = "<group>"; };
-		396B3935124EDA42009B84A4 /* OALAudioTrack.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OALAudioTrack.h; sourceTree = "<group>"; };
-		396B3936124EDA42009B84A4 /* OALAudioTrack.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OALAudioTrack.m; sourceTree = "<group>"; };
-		396B3937124EDA42009B84A4 /* OALAudioTracks.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OALAudioTracks.h; sourceTree = "<group>"; };
-		396B3938124EDA42009B84A4 /* OALAudioTracks.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OALAudioTracks.m; sourceTree = "<group>"; };
 		396B393E124EDA42009B84A4 /* LICENSE.ObjectAL.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE.ObjectAL.txt; sourceTree = "<group>"; };
 		396B393F124EDA42009B84A4 /* ObjectAL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ObjectAL.h; sourceTree = "<group>"; };
 		396B3940124EDA42009B84A4 /* ObjectALConfig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ObjectALConfig.h; sourceTree = "<group>"; };
@@ -673,6 +699,7 @@
 				506EDB88102F4C4000A389B3 /* libz.dylib in Frameworks */,
 				506EDBA5102F4C9F00A389B3 /* AVFoundation.framework in Frameworks */,
 				506EE1A91030508200A389B3 /* libcocos2d libraries.a in Frameworks */,
+				3749A96112A1EBD90045E750 /* CoreMedia.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -746,6 +773,7 @@
 				DC6640020F83B3EA000B3E49 /* AudioToolbox.framework */,
 				506EDB87102F4C4000A389B3 /* libz.dylib */,
 				506EDBA4102F4C9F00A389B3 /* AVFoundation.framework */,
+				3749A96012A1EBD90045E750 /* CoreMedia.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -992,12 +1020,24 @@
 		396B3934124EDA42009B84A4 /* AudioTrack */ = {
 			isa = PBXGroup;
 			children = (
-				396B3935124EDA42009B84A4 /* OALAudioTrack.h */,
-				396B3936124EDA42009B84A4 /* OALAudioTrack.m */,
-				395FE918126936ED00A8BD6A /* OALAudioTrackNotifications.h */,
-				395FE919126936ED00A8BD6A /* OALAudioTrackNotifications.m */,
-				396B3937124EDA42009B84A4 /* OALAudioTracks.h */,
-				396B3938124EDA42009B84A4 /* OALAudioTracks.m */,
+				3749A92912A1EB630045E750 /* OALAudioPlayer.h */,
+				3749A92A12A1EB630045E750 /* OALAudioPlayer.m */,
+				3749A92B12A1EB630045E750 /* OALAudioPlayerAudioQueueAudioFile.h */,
+				3749A92C12A1EB630045E750 /* OALAudioPlayerAudioQueueAudioFile.m */,
+				3749A92D12A1EB630045E750 /* OALAudioPlayerAudioQueueAVAssetReader.h */,
+				3749A92E12A1EB630045E750 /* OALAudioPlayerAudioQueueAVAssetReader.m */,
+				3749A92F12A1EB630045E750 /* OALAudioPlayerAudioUnitAVAssetReader.h */,
+				3749A93012A1EB630045E750 /* OALAudioPlayerAudioUnitAVAssetReader.m */,
+				3749A93112A1EB630045E750 /* OALAudioPlayerAVAudioPlayer.h */,
+				3749A93212A1EB630045E750 /* OALAudioPlayerAVAudioPlayer.m */,
+				3749A93312A1EB630045E750 /* OALAudioPlayerAVPlayer.h */,
+				3749A93412A1EB630045E750 /* OALAudioPlayerAVPlayer.m */,
+				3749A93512A1EB630045E750 /* OALAudioTrack.h */,
+				3749A93612A1EB630045E750 /* OALAudioTrack.m */,
+				3749A93712A1EB640045E750 /* OALAudioTrackManager.h */,
+				3749A93812A1EB640045E750 /* OALAudioTrackManager.m */,
+				3749A93912A1EB640045E750 /* OALAudioTrackNotifications.h */,
+				3749A93A12A1EB640045E750 /* OALAudioTrackNotifications.m */,
 			);
 			path = AudioTrack;
 			sourceTree = "<group>";
@@ -1181,8 +1221,6 @@
 				396B395F124EDA43009B84A4 /* OALAction.h in Headers */,
 				396B3961124EDA43009B84A4 /* OALActionManager.h in Headers */,
 				396B3963124EDA43009B84A4 /* OALFunction.h in Headers */,
-				396B3965124EDA43009B84A4 /* OALAudioTrack.h in Headers */,
-				396B3967124EDA43009B84A4 /* OALAudioTracks.h in Headers */,
 				396B396D124EDA43009B84A4 /* ObjectAL.h in Headers */,
 				396B396E124EDA43009B84A4 /* ObjectALConfig.h in Headers */,
 				396B3970124EDA43009B84A4 /* ALBuffer.h in Headers */,
@@ -1209,9 +1247,17 @@
 				399A5E401265311900415D8D /* OALSimpleAudioSample.h in Headers */,
 				399A5E481265325600415D8D /* OpenALAudioTrackSample.h in Headers */,
 				395FE7E71268C64100A8BD6A /* HardwareDemo.h in Headers */,
-				395FE91A126936ED00A8BD6A /* OALAudioTrackNotifications.h in Headers */,
 				39BF0C2112887C2800C83D2E /* IOSVersion.h in Headers */,
 				39DFFD2C129C03AE0070A4D1 /* OALInterruptAPI.h in Headers */,
+				3749A93B12A1EB640045E750 /* OALAudioPlayer.h in Headers */,
+				3749A93D12A1EB640045E750 /* OALAudioPlayerAudioQueueAudioFile.h in Headers */,
+				3749A93F12A1EB640045E750 /* OALAudioPlayerAudioQueueAVAssetReader.h in Headers */,
+				3749A94112A1EB640045E750 /* OALAudioPlayerAudioUnitAVAssetReader.h in Headers */,
+				3749A94312A1EB640045E750 /* OALAudioPlayerAVAudioPlayer.h in Headers */,
+				3749A94512A1EB640045E750 /* OALAudioPlayerAVPlayer.h in Headers */,
+				3749A94712A1EB640045E750 /* OALAudioTrack.h in Headers */,
+				3749A94912A1EB640045E750 /* OALAudioTrackManager.h in Headers */,
+				3749A94B12A1EB640045E750 /* OALAudioTrackNotifications.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1487,8 +1533,6 @@
 				396B3960124EDA43009B84A4 /* OALAction.m in Sources */,
 				396B3962124EDA43009B84A4 /* OALActionManager.m in Sources */,
 				396B3964124EDA43009B84A4 /* OALFunction.m in Sources */,
-				396B3966124EDA43009B84A4 /* OALAudioTrack.m in Sources */,
-				396B3968124EDA43009B84A4 /* OALAudioTracks.m in Sources */,
 				396B3971124EDA43009B84A4 /* ALBuffer.m in Sources */,
 				396B3973124EDA43009B84A4 /* ALCaptureDevice.m in Sources */,
 				396B3975124EDA43009B84A4 /* ALContext.m in Sources */,
@@ -1508,8 +1552,16 @@
 				399A5E411265311900415D8D /* OALSimpleAudioSample.m in Sources */,
 				399A5E491265325600415D8D /* OpenALAudioTrackSample.m in Sources */,
 				395FE7E81268C64100A8BD6A /* HardwareDemo.m in Sources */,
-				395FE91B126936ED00A8BD6A /* OALAudioTrackNotifications.m in Sources */,
 				39BF0C2212887C2800C83D2E /* IOSVersion.m in Sources */,
+				3749A93C12A1EB640045E750 /* OALAudioPlayer.m in Sources */,
+				3749A93E12A1EB640045E750 /* OALAudioPlayerAudioQueueAudioFile.m in Sources */,
+				3749A94012A1EB640045E750 /* OALAudioPlayerAudioQueueAVAssetReader.m in Sources */,
+				3749A94212A1EB640045E750 /* OALAudioPlayerAudioUnitAVAssetReader.m in Sources */,
+				3749A94412A1EB640045E750 /* OALAudioPlayerAVAudioPlayer.m in Sources */,
+				3749A94612A1EB640045E750 /* OALAudioPlayerAVPlayer.m in Sources */,
+				3749A94812A1EB640045E750 /* OALAudioTrack.m in Sources */,
+				3749A94A12A1EB640045E750 /* OALAudioTrackManager.m in Sources */,
+				3749A94C12A1EB640045E750 /* OALAudioTrackNotifications.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
