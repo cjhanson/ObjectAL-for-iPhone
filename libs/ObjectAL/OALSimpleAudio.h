@@ -312,31 +312,35 @@ SYNTHESIZE_SINGLETON_FOR_CLASS_HEADER(OALSimpleAudio);
  */
 - (ALBuffer*) preloadEffect:(NSString*) filePath;
 
+/** Preload and cache a sound effect for later playback.
+ *
+ * @param filePath The path containing the sound data.
+ * @param mono If true, convert the file to mono.
+ */
+- (ALBuffer*) preloadEffect:(NSString*) filePath mono:(bool) mono;
+
 #if NS_BLOCKS_AVAILABLE && OBJECTAL_CFG_USE_BLOCKS
 
 /** Asynchronous preload and cache sound effect for later playback.
  *
  * @param filePath an NSString with the path containing the sound data.
+ * @param mono If true, convert the file to mono.
  * @param completionBlock Executed when loading is complete.
  */
 - (BOOL) preloadEffect:(NSString*) filePath
+				  mono:(bool) mono
 	   completionBlock:(void(^)(ALBuffer *)) completionBlock;
 
 /** Asynchronous preload and cache multiple sound effects for later playback.
  *
  * @param filePaths An NSArray of NSStrings with the paths containing the sound data.
+ * @param mono If true, convert the files to mono.
  * @param progressBlock Executed regularly while file loading is in progress.
  */
 - (void) preloadEffects:(NSArray*) filePaths
+				   mono:(bool) mono
 		  progressBlock:(void (^)(uint progress, uint successCount, uint total)) progressBlock;
-#else
-/** Asynchronous preload and cache multiple sound effects for later playback.
- *
- * @param filePaths An NSArray of NSStrings with the paths containing the sound data.
- * @param progressInvocation Invoked regularly while file loading is in progress.
- */
-- (void) preloadEffects:(NSArray*) filePaths
-	 progressInvocation:(NSInvocation *) progressInvocation;
+
 #endif
 
 /** Unload a preloaded effect.
