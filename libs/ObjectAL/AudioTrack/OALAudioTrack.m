@@ -234,15 +234,15 @@
 
 #pragma mark Object Management
 
-static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
-+ (void) setPreferredPlayerType:(OALAudioPlayerType)aPlayerType
+static Class preferredPlayerClass = nil;
++ (void) setPreferredPlayerClass:(Class)aPlayerClass
 {
-	preferredPlayerType = aPlayerType;
+	preferredPlayerClass = aPlayerClass;
 }
 
-+ (OALAudioPlayerType) preferredPlayerType
++ (Class) preferredPlayerClass
 {
-	return preferredPlayerType;
+	return preferredPlayerClass;
 }
 
 + (id) track
@@ -427,6 +427,7 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 		if(paused != value)
 		{
 			paused = value;
+			
 			if(paused)
 			{
 				OAL_LOG_DEBUG(@"%@: Pause", self);
@@ -693,10 +694,10 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 		}
 		
 		NSError* error;
-		Class playerClass = [OALAudioPlayer getClassForPlayerType:preferredPlayerType];
+		Class playerClass = (preferredPlayerClass)?preferredPlayerClass:[OALAudioPlayer getClassForPlayerType:OALAudioPlayerTypeDefault];
 		if(!playerClass)
 		{
-			OAL_LOG_ERROR(@"Could not get class of preferred type: %d", preferredPlayerType);
+			OAL_LOG_ERROR(@"Could not get class of preferred type: %@", preferredPlayerClass);
 			return NO;
 		}
 		
@@ -826,6 +827,13 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 	{
 		[self stopActions];
 		SIMULATOR_BUG_WORKAROUND_PREPARE_PLAYBACK();
+		
+		if(paused){
+			playing = YES;
+			self.paused = NO;
+			return playing;
+		}
+		
 		player.currentTime = currentTime;
 		player.volume = muted ? 0 : gain;
 		player.numberOfLoops = numberOfLoops;
@@ -893,6 +901,9 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 	// Must always be synchronized
 	@synchronized(self)
 	{
+		if(self.suspended)
+			return;
+		
 		[self stopFade];
 		gainAction = [[OALSequentialActions actions:
 					   [OALGainAction actionWithDuration:duration endValue:value],
@@ -907,9 +918,16 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 	// Must always be synchronized
 	@synchronized(self)
 	{
-		[gainAction stopAction];
-		[gainAction release];
-		gainAction = nil;
+		if(nil != gainAction)
+		{
+			self.volume = ((OALGainAction *)[((OALSequentialActions *)gainAction).actions objectAtIndex:0]).endValue;
+			
+			OAL_LOG_DEBUG(@"Stop fade, setting volume to end value of fade in progress %.2f.", self.volume);
+			
+			[gainAction stopAction];
+			[gainAction release];
+			gainAction = nil;
+		}
 	}
 }
 
@@ -921,6 +939,9 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 	// Must always be synchronized
 	@synchronized(self)
 	{
+		if(self.suspended)
+			return;
+		
 		[self stopPan];
 		panAction = [[OALSequentialActions actions:
 					  [OALPanAction actionWithDuration:duration endValue:value],
@@ -935,9 +956,14 @@ static OALAudioPlayerType preferredPlayerType = OALAudioPlayerTypeDefault;
 	// Must always be synchronized
 	@synchronized(self)
 	{
-		[panAction stopAction];
-		[panAction release];
-		panAction = nil;
+		if(nil != panAction)
+		{
+			self.pan = ((OALPanAction *)[((OALSequentialActions *)panAction).actions objectAtIndex:0]).endValue;
+			
+			[panAction stopAction];
+			[panAction release];
+			panAction = nil;
+		}
 	}
 }
 

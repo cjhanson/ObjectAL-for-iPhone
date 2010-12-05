@@ -34,6 +34,7 @@
 	
 	NSURL							*url;
 	float							volume;
+	float							pan;
 	NSInteger						loopCount;
 	NSInteger						numberOfLoops;
 	OALPlayerStatus					status;
@@ -43,89 +44,31 @@
 	AudioStreamBasicDescription		dataFormat;
 	AudioQueueRef					queue;
 	AudioQueueTimelineRef			queueTimeline;
+	AudioStreamPacketDescription	*packetDescs;
 	SInt64							packetIndex;
+	SInt64							packetIndexSeeking;
 	UInt32							numPacketsToRead;
+	BOOL							queueIsRunning;
 	BOOL							trackEnded;
 	
 	AVAssetReader					*assetReader;
+	AVAssetReader					*assetReaderSeeking;
 	AVAssetReaderAudioMixOutput		*assetReaderMixerOutput;
+	AVAssetReaderAudioMixOutput		*assetReaderMixerOutputSeeking;
 	AVURLAsset						*asset;
 	
 	NSTimeInterval					seekTimeOffset;
+	NSTimeInterval					lastCurrentTime;
 	
 	NSTimeInterval					positionBeforeInterruption;
-}
-
-@end
-#if 0
-
-#import <Foundation/Foundation.h>
-#import <AVFoundation/AVFoundation.h>
-
-#import <AssetsLibrary/AssetsLibrary.h>
-#import <CoreMedia/CoreMedia.h>
-#import <Accelerate/Accelerate.h>
-#import "CJMusicPlayerProtocol.h"
-
-typedef struct CJDSP CJDSP;
-
-#define CJMP_NUM_QUEUE_BUFFERS	3
-
-@interface CJAVAssetPlayer : NSObject <CJMusicPlayerProtocol> {
-	E_CJMP_State					audioState;
-	
-	AudioStreamBasicDescription		dataFormat;
-	AudioQueueRef					queue;
-	AudioQueueTimelineRef			queueTimeline;
-	SInt64							packetIndex;
-	UInt32							numPacketsToRead;
-	AudioStreamPacketDescription	*packetDescs;
-	BOOL							isLooping;
-	BOOL							trackClosed;
-	BOOL							trackEnded;
-	AudioQueueBufferRef				buffers[CJMP_NUM_QUEUE_BUFFERS];
-	Float32							currentVolume;
-	
-	AVAssetReader					*audioReader;
-	AVAssetReaderAudioMixOutput		*audioReaderMixerOutput;
-	AVAsset							*audioAsset;
 	
 	NSTimeInterval					duration;
-	
-	NSTimeInterval					playbackStartTime;
-	NSTimeInterval					pauseStartTime;
-	NSTimeInterval					pauseDuration;
-	Float64							lastCurrentTime;
-	NSTimeInterval					timeOfLastCurrentTimeCheck;
-	NSTimeInterval					timeOfLastEstimatedTimeCheck;
-	
-	BOOL							sessionWasInterrupted;
-	NSTimeInterval					positionBeforeInterruption;
-	
-	NSTimeInterval					seekTimeOffset;
-	
-	BOOL							willDispatchNotifications;
-	
-	AudioConverterRef				audioConverter;
-	AudioStreamBasicDescription		convertedFormat;
-	
-@public	
-	void							*convertedDataRaw;
-	Float32							*convertedData;
-	UInt32							convertedDataLength;
-	
-	CJDSP							*dsp;
 }
 
-@property (nonatomic, readonly) AudioQueueRef queue;
-@property (nonatomic, readonly) UInt32 numPacketsToRead;
-
-@property (nonatomic, retain) AVAssetReader *audioReader;
-@property (nonatomic, retain) AVAssetReaderAudioMixOutput *audioReaderMixerOutput;
-@property (nonatomic, retain) AVAsset *audioAsset;
-
-- (BOOL)prepareToPlayAsset:(AVAsset *)anAsset;
+- (BOOL) setupReader:(AVAssetReader **)outReader output:(AVAssetReaderAudioMixOutput **)outOutput forAsset:(AVAsset *)anAsset error:(NSError **)outError;
+- (BOOL)setupAudioQueue;
+- (BOOL) setupDSP;
+- (void)close;
+- (void) processSampleData:(AudioQueueBufferRef)buffer numPackets:(UInt32)numPackets;
 
 @end
-
-#endif

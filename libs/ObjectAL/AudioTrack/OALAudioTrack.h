@@ -77,8 +77,9 @@
 	SuspendLock* suspendLock;
 }
 
-+ (void) setPreferredPlayerType:(OALAudioPlayerType)aPlayerType;
-+ (OALAudioPlayerType) preferredPlayerType;
+/** The sub class of OALAudioPlayer that you want to use */
++ (void) setPreferredPlayerClass:(Class)aPlayerClass;
++ (Class) preferredPlayerClass;
 
 #pragma mark Properties
 

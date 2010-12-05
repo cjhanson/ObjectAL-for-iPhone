@@ -346,44 +346,44 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(OALSimpleAudio);
 
 - (bool) playBg:(NSString*) filePath
 {
-	return [self playBg:filePath loop:NO];
+	return [self playBg:filePath loop:0];
 }
 
-- (bool) playBg:(NSString*) filePath loop:(bool) loop
+- (bool) playBg:(NSString*) filePath loop:(int) loop
 {
 	if(nil == filePath)
 	{
 		OAL_LOG_ERROR(@"filePath was NULL");
 		return NO;
 	}
-	return [backgroundTrack playFile:filePath loops:loop ? -1 : 0];
+	return [backgroundTrack playFile:filePath loops:loop];
 }
 
 - (bool) playBg:(NSString*) filePath
 		 volume:(float) volume
 			pan:(float) pan
-		   loop:(bool) loop
+		   loop:(int) loop
 {
 	OAL_LOG_DEBUG(@"Play bg with vol %f, pan %f, loop %d, file %@", volume, pan, loop, filePath);
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
 		backgroundTrack.gain = volume;
 		backgroundTrack.pan = pan;
-		return [backgroundTrack playFile:filePath loops:loop ? -1 : 0];
+		return [backgroundTrack playFile:filePath loops:loop];
 	}
 }
 
 - (bool) playBg
 {
-	return [self playBgWithLoop:NO];
+	return [self playBgWithLoop:0];
 }
 
-- (bool) playBgWithLoop:(bool) loop
+- (bool) playBgWithLoop:(int) loop
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
 		OAL_LOG_DEBUG(@"Play bg, loop %d");
-		backgroundTrack.numberOfLoops = loop ? -1 : 0;
+		backgroundTrack.numberOfLoops = loop;
 		return [backgroundTrack play];
 	}
 }

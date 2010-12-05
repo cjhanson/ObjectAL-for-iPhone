@@ -56,7 +56,7 @@ enum {
 	OALAudioPlayerTypeAudioUnitAVAssetReader,
 	
 	//! Default
-	OALAudioPlayerTypeDefault = OALAudioPlayerTypeAVPlayer
+	OALAudioPlayerTypeDefault = OALAudioPlayerTypeAudioQueueAVAssetReader
 };
 typedef NSInteger OALAudioPlayerType;
 

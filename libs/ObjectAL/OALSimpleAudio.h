@@ -238,10 +238,10 @@ SYNTHESIZE_SINGLETON_FOR_CLASS_HEADER(OALSimpleAudio);
 
 /** Play whatever background music is preloaded.
  *
- * @param loop If true, loop the bg track.
+ * @param loop if 0 play once, if 1 play twice etc... and if -1 loop forever
  * @return TRUE if the operation was successful.
  */
-- (bool) playBgWithLoop:(bool) loop;
+- (bool) playBgWithLoop:(int) loop;
 
 /** Play the background music at the specified path.
  * If the music has not been preloaded, this method
@@ -267,10 +267,10 @@ SYNTHESIZE_SINGLETON_FOR_CLASS_HEADER(OALSimpleAudio);
  * will stop.
  *
  * @param path The path containing the background music.
- * @param loop If true, loop the bg track.
+ * @param loop if 0 play once, if 1 play twice etc... and if -1 loop forever
  * @return TRUE if the operation was successful.
  */
-- (bool) playBg:(NSString*) path loop:(bool) loop;
+- (bool) playBg:(NSString*) path loop:(int) loop;
 
 /** Play the background music at the specified path.
  * If the music has not been preloaded, this method
@@ -287,13 +287,13 @@ SYNTHESIZE_SINGLETON_FOR_CLASS_HEADER(OALSimpleAudio);
  * @param filePath The path containing the sound data.
  * @param volume The volume (gain) to play at (0.0 - 1.0).
  * @param pan Left-right panning (-1.0 = far left, 1.0 = far right) (Only on iOS 4.0+).
- * @param loop If TRUE, the sound will loop until you call "stopBg".
+ * @param loop if 0 play once, if 1 play twice etc... and if -1 loop forever
  * @return TRUE if the operation was successful.
  */
 - (bool) playBg:(NSString*) filePath
 		 volume:(float) volume
 			pan:(float) pan
-		   loop:(bool) loop;
+		   loop:(int) loop;
 
 /** Stop the background music playback and rewind.
  */
