@@ -99,9 +99,11 @@
 {
 	self = [super init];
 	if(self){
-		delegate = nil;
-		playerType = OALAudioPlayerTypeInvalid;
-		suspended = NO;
+		delegate	= nil;
+		playerType	= OALAudioPlayerTypeInvalid;
+		state		= OALPlayerStateClosed;
+		status		= OALPlayerStatusUnknown;
+		suspended	= NO;
 	}
 	return self;
 }
@@ -349,11 +351,14 @@
 			if(suspended)
 			{
 				//currentTime = player.currentTime;
-				[self stop];
+				if(state == OALPlayerStatePlaying || state == OALPlayerStatePaused){
+					OAL_LOG_DEBUG(@"Player suspended. Stopping.");
+					[self stop];
+				}
 			}
 			else
 			{
-				
+				OAL_LOG_DEBUG(@"Player un-suspended. Doing nothing.");
 			}
 		}
 	}

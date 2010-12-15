@@ -805,6 +805,97 @@ NSString *GetNSStringFromAudioQueueError(OSStatus errorCode)
 	}
 }
 
+NSString *GetNSStringFromAudioUnitError(OSStatus errorCode)
+{
+	switch (errorCode) {
+		case noErr:
+			return nil;
+			break;
+		case kAudioUnitErr_InvalidProperty:
+			return @"Invalid property.";
+			break;
+		case kAudioUnitErr_InvalidParameter:
+			return @"Invalid Parameter.";
+			break;
+		case kAudioUnitErr_InvalidElement:
+			return @"Invalid Element.";
+			break;
+		case kAudioUnitErr_NoConnection:
+			return @"No Connection.";
+			break;
+		case kAudioUnitErr_FailedInitialization:
+			return @"Failed Initialization.";
+			break;
+		case kAudioUnitErr_TooManyFramesToProcess:
+			return @"Too Many Frames to Process.";
+			break;
+		case kAudioUnitErr_IllegalInstrument:
+			return @"Illegal Instrument.";
+			break;
+		case kAudioUnitErr_InstrumentTypeNotFound:
+			return @"Instrument Type Not Found.";
+			break;
+		case kAudioUnitErr_InvalidFile:
+			return @"Invalid File.";
+			break;
+		case kAudioUnitErr_UnknownFileType:
+			return @"Unknown File Type.";
+			break;
+		case kAudioUnitErr_FileNotSpecified:
+			return @"File Not Specified.";
+			break;
+		case kAudioUnitErr_FormatNotSupported:
+			return @"Format Not Supported.";
+			break;
+		case kAudioUnitErr_Uninitialized:
+			return @"Uninitialized.";
+			break;
+		case kAudioUnitErr_InvalidScope:
+			return @"Invalid Scope.";
+			break;
+		case kAudioUnitErr_PropertyNotWritable:
+			return @"Property Not Writable.";
+			break;
+		case kAudioUnitErr_CannotDoInCurrentContext:
+			return @"Cannot Do In Current Context.";
+			break;
+		case kAudioUnitErr_InvalidPropertyValue:
+			return @"Invalid Property Value.";
+			break;
+		case kAudioUnitErr_PropertyNotInUse:
+			return @"Property Not In Use.";
+			break;
+		case kAudioUnitErr_Initialized:
+			return @"Initialized.";
+			break;
+		case kAudioUnitErr_InvalidOfflineRender:
+			return @"Invalid Offline Render.";
+			break;
+		case kAudioUnitErr_Unauthorized:
+			return @"Unauthorized.";
+			break;
+		default:
+			return [NSString stringWithFormat:@"Unknown error %d", errorCode];
+			break;
+	}
+}
+
++ (void) logAudioUnitError:(OSStatus)errorCode function:(const char*) function description:(NSString*) description, ...
+{
+	if(noErr != errorCode)
+	{
+		NSString* errorString = GetNSStringFromAudioUnitError(errorCode);
+		if(nil != errorString)
+		{
+			va_list args;
+			va_start(args, description);
+			description = [[[NSString alloc] initWithFormat:description arguments:args] autorelease];
+			va_end(args);
+			OAL_LOG_ERROR_CONTEXT(function, @"%@ (error code 0x%08x: %@)", description, errorCode, errorString);
+		}
+	}
+}
+
 #pragma mark AudioStreamBasicDescription
 
 NSString *GetNSStringFrom4CharCode(unsigned long code)
@@ -1082,13 +1173,13 @@ NSString *GetNSStringFrom4CharCode(unsigned long code)
 	if(!mixing)
 	{
 		// Setting OtherMixableAudioShouldDuck clears MixWithOthers.
-		[self setIntProperty:kAudioSessionProperty_OtherMixableAudioShouldDuck value:ducking];
+//		[self setIntProperty:kAudioSessionProperty_OtherMixableAudioShouldDuck value:ducking];
 	}
 
 	if(!ducking)
 	{
 		// Setting MixWithOthers clears OtherMixableAudioShouldDuck.
-		[self setIntProperty:kAudioSessionProperty_OverrideCategoryMixWithOthers value:mixing];
+//		[self setIntProperty:kAudioSessionProperty_OverrideCategoryMixWithOthers value:mixing];
 	}
 	
 #endif /* !TARGET_IPHONE_SIMULATOR */

@@ -358,8 +358,18 @@ SYNTHESIZE_SINGLETON_FOR_CLASS_HEADER(OALAudioSupport);
  * @param description: A printf-style description of what happened.
  */
 + (void) logAudioQueueError:(OSStatus)errorCode
-				 function:(const char*) function
-			  description:(NSString*) description, ...;
+				   function:(const char*) function
+				description:(NSString*) description, ...;
+
+/** Log an error if the specified AudioUnit error code indicates an error.
+ *
+ * @param errorCode: The error code returned from an OS call.
+ * @param function: The function name where the error occurred.
+ * @param description: A printf-style description of what happened.
+ */
++ (void) logAudioUnitError:(OSStatus)errorCode
+				  function:(const char*) function
+			   description:(NSString*) description, ...;
 
 /** Get a pretty description from an AudioStreamBasicDescription struct
  *

@@ -37,8 +37,7 @@
 	float							pan;
 	NSInteger						loopCount;
 	NSInteger						numberOfLoops;
-	OALPlayerStatus					status;
-	OALPlayerState					state;
+	
 	
 	AudioQueueBufferRef				buffers[OBJECTAL_CFG_AUDIO_QUEUE_NUM_BUFFERS];
 	AudioStreamBasicDescription		dataFormat;
@@ -49,23 +48,22 @@
 	SInt64							packetIndexSeeking;
 	UInt32							numPacketsToRead;
 	BOOL							queueIsRunning;
+	BOOL							queueIsStopping;
 	BOOL							trackEnded;
 	
 	AVAssetReader					*assetReader;
 	AVAssetReader					*assetReaderSeeking;
-	AVAssetReaderAudioMixOutput		*assetReaderMixerOutput;
-	AVAssetReaderAudioMixOutput		*assetReaderMixerOutputSeeking;
+	AVAssetReaderOutput				*assetReaderMixerOutput;
+	AVAssetReaderOutput				*assetReaderMixerOutputSeeking;
 	AVURLAsset						*asset;
 	
 	NSTimeInterval					seekTimeOffset;
 	NSTimeInterval					lastCurrentTime;
 	
-	NSTimeInterval					positionBeforeInterruption;
-	
 	NSTimeInterval					duration;
 }
 
-- (BOOL) setupReader:(AVAssetReader **)outReader output:(AVAssetReaderAudioMixOutput **)outOutput forAsset:(AVAsset *)anAsset error:(NSError **)outError;
+- (BOOL) setupReader:(AVAssetReader **)outReader output:(AVAssetReaderOutput **)outOutput forAsset:(AVAsset *)anAsset error:(NSError **)outError;
 - (BOOL)setupAudioQueue;
 - (BOOL) setupDSP;
 - (void)close;

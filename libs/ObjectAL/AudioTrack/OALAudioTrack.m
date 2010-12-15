@@ -833,7 +833,7 @@ static Class preferredPlayerClass = nil;
 			self.paused = NO;
 			return playing;
 		}
-		
+		OAL_LOG_DEBUG(@"Restoring currentTime");
 		player.currentTime = currentTime;
 		player.volume = muted ? 0 : gain;
 		player.numberOfLoops = numberOfLoops;
@@ -866,11 +866,30 @@ static Class preferredPlayerClass = nil;
 	}
 }
 
+
+- (void) pause
+{
+	if(paused)
+		return;
+	self.paused = YES;
+}
+
+- (void) resume
+{
+	if(!paused)
+	{
+		[self play];
+		return;
+	}
+	self.paused = NO;
+}
+
 - (void) stop
 {
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
 		[self stopActions];
+		OAL_LOG_DEBUG(@"Storing player currentTime");
 		currentTime = player.currentTime;
 		[player stop];
 		if(playing && !paused)

@@ -110,9 +110,12 @@ enum {
 typedef NSInteger OALPlayerState;
 
 @interface OALAudioPlayer : NSObject {
-	OALAudioPlayerType playerType;
-	BOOL suspended;
 	id<OALAudioPlayerDelegate> delegate;
+	OALAudioPlayerType		playerType;
+	OALPlayerStatus			status;
+	OALPlayerState			state;
+	BOOL					suspended;
+	
 }
 
 + (Class) getClassForPlayerType:(OALAudioPlayerType)aPlayerType;

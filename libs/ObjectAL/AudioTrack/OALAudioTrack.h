@@ -328,6 +328,18 @@
  */
 - (bool) playAtTime:(NSTimeInterval) time;
 
+/** Pause
+ *
+ * Just a wrapper for setPaused:
+ */
+- (void) pause;
+
+/** Resume
+ *
+ * Just a wrapper for setPaused:
+ */
+- (void) resume;
+
 /** Stop playing and stop all operations.
  */
 - (void) stop;

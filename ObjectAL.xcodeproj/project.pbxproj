@@ -24,13 +24,13 @@
 		1D60589B0D05DD56006BFB54 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.m */; };
 		1F3B9A2D0EF2145700286867 /* ObjectALAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 1F3B9A2B0EF2145700286867 /* ObjectALAppDelegate.m */; };
 		3749A93B12A1EB640045E750 /* OALAudioPlayer.h in Headers */ = {isa = PBXBuildFile; fileRef = 3749A92912A1EB630045E750 /* OALAudioPlayer.h */; };
-		3749A93C12A1EB640045E750 /* OALAudioPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 3749A92A12A1EB630045E750 /* OALAudioPlayer.m */; };
+		3749A93C12A1EB640045E750 /* OALAudioPlayer.mm in Sources */ = {isa = PBXBuildFile; fileRef = 3749A92A12A1EB630045E750 /* OALAudioPlayer.mm */; };
 		3749A93D12A1EB640045E750 /* OALAudioPlayerAudioQueueAudioFile.h in Headers */ = {isa = PBXBuildFile; fileRef = 3749A92B12A1EB630045E750 /* OALAudioPlayerAudioQueueAudioFile.h */; };
 		3749A93E12A1EB640045E750 /* OALAudioPlayerAudioQueueAudioFile.m in Sources */ = {isa = PBXBuildFile; fileRef = 3749A92C12A1EB630045E750 /* OALAudioPlayerAudioQueueAudioFile.m */; };
 		3749A93F12A1EB640045E750 /* OALAudioPlayerAudioQueueAVAssetReader.h in Headers */ = {isa = PBXBuildFile; fileRef = 3749A92D12A1EB630045E750 /* OALAudioPlayerAudioQueueAVAssetReader.h */; };
 		3749A94012A1EB640045E750 /* OALAudioPlayerAudioQueueAVAssetReader.m in Sources */ = {isa = PBXBuildFile; fileRef = 3749A92E12A1EB630045E750 /* OALAudioPlayerAudioQueueAVAssetReader.m */; };
 		3749A94112A1EB640045E750 /* OALAudioPlayerAudioUnitAVAssetReader.h in Headers */ = {isa = PBXBuildFile; fileRef = 3749A92F12A1EB630045E750 /* OALAudioPlayerAudioUnitAVAssetReader.h */; };
-		3749A94212A1EB640045E750 /* OALAudioPlayerAudioUnitAVAssetReader.m in Sources */ = {isa = PBXBuildFile; fileRef = 3749A93012A1EB630045E750 /* OALAudioPlayerAudioUnitAVAssetReader.m */; };
+		3749A94212A1EB640045E750 /* OALAudioPlayerAudioUnitAVAssetReader.mm in Sources */ = {isa = PBXBuildFile; fileRef = 3749A93012A1EB630045E750 /* OALAudioPlayerAudioUnitAVAssetReader.mm */; };
 		3749A94312A1EB640045E750 /* OALAudioPlayerAVAudioPlayer.h in Headers */ = {isa = PBXBuildFile; fileRef = 3749A93112A1EB630045E750 /* OALAudioPlayerAVAudioPlayer.h */; };
 		3749A94412A1EB640045E750 /* OALAudioPlayerAVAudioPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 3749A93212A1EB630045E750 /* OALAudioPlayerAVAudioPlayer.m */; };
 		3749A94512A1EB640045E750 /* OALAudioPlayerAVPlayer.h in Headers */ = {isa = PBXBuildFile; fileRef = 3749A93312A1EB630045E750 /* OALAudioPlayerAVPlayer.h */; };
@@ -357,13 +357,13 @@
 		1F3B9A820EF2151B00286867 /* ObjectAL_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ObjectAL_Prefix.pch; sourceTree = SOURCE_ROOT; };
 		29B97316FDCFA39411CA2CEA /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		3749A92912A1EB630045E750 /* OALAudioPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OALAudioPlayer.h; sourceTree = "<group>"; };
-		3749A92A12A1EB630045E750 /* OALAudioPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OALAudioPlayer.m; sourceTree = "<group>"; };
+		3749A92A12A1EB630045E750 /* OALAudioPlayer.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = OALAudioPlayer.mm; sourceTree = "<group>"; };
 		3749A92B12A1EB630045E750 /* OALAudioPlayerAudioQueueAudioFile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OALAudioPlayerAudioQueueAudioFile.h; sourceTree = "<group>"; };
 		3749A92C12A1EB630045E750 /* OALAudioPlayerAudioQueueAudioFile.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OALAudioPlayerAudioQueueAudioFile.m; sourceTree = "<group>"; };
 		3749A92D12A1EB630045E750 /* OALAudioPlayerAudioQueueAVAssetReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OALAudioPlayerAudioQueueAVAssetReader.h; sourceTree = "<group>"; };
 		3749A92E12A1EB630045E750 /* OALAudioPlayerAudioQueueAVAssetReader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OALAudioPlayerAudioQueueAVAssetReader.m; sourceTree = "<group>"; };
 		3749A92F12A1EB630045E750 /* OALAudioPlayerAudioUnitAVAssetReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OALAudioPlayerAudioUnitAVAssetReader.h; sourceTree = "<group>"; };
-		3749A93012A1EB630045E750 /* OALAudioPlayerAudioUnitAVAssetReader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OALAudioPlayerAudioUnitAVAssetReader.m; sourceTree = "<group>"; };
+		3749A93012A1EB630045E750 /* OALAudioPlayerAudioUnitAVAssetReader.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = OALAudioPlayerAudioUnitAVAssetReader.mm; sourceTree = "<group>"; };
 		3749A93112A1EB630045E750 /* OALAudioPlayerAVAudioPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OALAudioPlayerAVAudioPlayer.h; sourceTree = "<group>"; };
 		3749A93212A1EB630045E750 /* OALAudioPlayerAVAudioPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OALAudioPlayerAVAudioPlayer.m; sourceTree = "<group>"; };
 		3749A93312A1EB630045E750 /* OALAudioPlayerAVPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OALAudioPlayerAVPlayer.h; sourceTree = "<group>"; };
@@ -1021,13 +1021,13 @@
 			isa = PBXGroup;
 			children = (
 				3749A92912A1EB630045E750 /* OALAudioPlayer.h */,
-				3749A92A12A1EB630045E750 /* OALAudioPlayer.m */,
+				3749A92A12A1EB630045E750 /* OALAudioPlayer.mm */,
 				3749A92B12A1EB630045E750 /* OALAudioPlayerAudioQueueAudioFile.h */,
 				3749A92C12A1EB630045E750 /* OALAudioPlayerAudioQueueAudioFile.m */,
 				3749A92D12A1EB630045E750 /* OALAudioPlayerAudioQueueAVAssetReader.h */,
 				3749A92E12A1EB630045E750 /* OALAudioPlayerAudioQueueAVAssetReader.m */,
 				3749A92F12A1EB630045E750 /* OALAudioPlayerAudioUnitAVAssetReader.h */,
-				3749A93012A1EB630045E750 /* OALAudioPlayerAudioUnitAVAssetReader.m */,
+				3749A93012A1EB630045E750 /* OALAudioPlayerAudioUnitAVAssetReader.mm */,
 				3749A93112A1EB630045E750 /* OALAudioPlayerAVAudioPlayer.h */,
 				3749A93212A1EB630045E750 /* OALAudioPlayerAVAudioPlayer.m */,
 				3749A93312A1EB630045E750 /* OALAudioPlayerAVPlayer.h */,
@@ -1553,10 +1553,10 @@
 				399A5E491265325600415D8D /* OpenALAudioTrackSample.m in Sources */,
 				395FE7E81268C64100A8BD6A /* HardwareDemo.m in Sources */,
 				39BF0C2212887C2800C83D2E /* IOSVersion.m in Sources */,
-				3749A93C12A1EB640045E750 /* OALAudioPlayer.m in Sources */,
+				3749A93C12A1EB640045E750 /* OALAudioPlayer.mm in Sources */,
 				3749A93E12A1EB640045E750 /* OALAudioPlayerAudioQueueAudioFile.m in Sources */,
 				3749A94012A1EB640045E750 /* OALAudioPlayerAudioQueueAVAssetReader.m in Sources */,
-				3749A94212A1EB640045E750 /* OALAudioPlayerAudioUnitAVAssetReader.m in Sources */,
+				3749A94212A1EB640045E750 /* OALAudioPlayerAudioUnitAVAssetReader.mm in Sources */,
 				3749A94412A1EB640045E750 /* OALAudioPlayerAVAudioPlayer.m in Sources */,
 				3749A94612A1EB640045E750 /* OALAudioPlayerAVPlayer.m in Sources */,
 				3749A94812A1EB640045E750 /* OALAudioTrack.m in Sources */,

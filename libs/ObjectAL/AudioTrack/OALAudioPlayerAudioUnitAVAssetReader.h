@@ -30,9 +30,60 @@
 #import <AudioToolbox/AudioToolbox.h>
 #import <CoreMedia/CoreMedia.h>
 #import <AudioUnit/AudioUnit.h>
+#import "aurio_helper.h"
+#import "CAStreamBasicDescription.h"
 
 @interface OALAudioPlayerAudioUnitAVAssetReader : OALAudioPlayer {
-
+	NSURL							*url;
+	float							volume;
+	float							pan;
+	NSInteger						loopCount;
+	NSInteger						numberOfLoops;
+	
+	CAStreamBasicDescription		dataFormat;
+	BOOL							mute;
+	AudioUnit						rioUnit;
+	BOOL							unitIsRunning;
+	BOOL							unitHasBeenCreated;
+	AURenderCallbackStruct			inputProc;
+	float							tempbuf[8000];
+	float							*readbuffer_;
+	int								readpos_;
+	int								writepos_;
+	int								buffersize_;
+	UInt32							maxFPS;
+	UInt32							dataAvailable;
+	
+	SInt64							packetIndex;
+	SInt64							packetIndexSeeking;
+	BOOL							trackEnded;
+	
+	AVAssetReader					*assetReader;
+	AVAssetReader					*assetReaderSeeking;
+	AVAssetReaderAudioMixOutput		*assetReaderMixerOutput;
+	AVAssetReaderAudioMixOutput		*assetReaderMixerOutputSeeking;
+	AVURLAsset						*asset;
+	
+	NSOperationQueue				*readerOpQueue;
+	BOOL							backgroundloadflag_;
+	BOOL							backgroundloadshouldstopflag_;
+	
+	NSTimeInterval					seekTimeOffset;
+	NSTimeInterval					lastCurrentTime;
+	
+	NSTimeInterval					duration;
 }
+
+@property (nonatomic, assign)	AudioUnit				rioUnit;
+@property (nonatomic, assign)	BOOL					unitIsRunning;
+@property (nonatomic, assign)	BOOL					unitHasBeenCreated;
+@property (nonatomic, assign)	BOOL					mute;
+@property (nonatomic, assign)	AURenderCallbackStruct	inputProc;
+
+- (BOOL) setupReader:(AVAssetReader **)outReader output:(AVAssetReaderAudioMixOutput **)outOutput forAsset:(AVAsset *)anAsset error:(NSError **)outError;
+- (BOOL) setupAudioUnit;
+- (BOOL) setupDSP;
+- (void) close;
+- (void) processSampleDataForNumPackets:(UInt32)numPackets;
 
 @end

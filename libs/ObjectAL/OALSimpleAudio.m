@@ -356,7 +356,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(OALSimpleAudio);
 		OAL_LOG_ERROR(@"filePath was NULL");
 		return NO;
 	}
-	return [backgroundTrack playFile:filePath loops:loop];
+	return [self playBg:filePath volume:1.0f pan:0.5f loop:loop];
 }
 
 - (bool) playBg:(NSString*) filePath

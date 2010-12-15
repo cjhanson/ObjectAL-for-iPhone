@@ -32,7 +32,6 @@
 	AVURLAsset		*asset;
 	
 	//Helpers
-	OALPlayerState	state;
 	NSURL			*url;
 	float			volume;
 	BOOL			isPlaying;
