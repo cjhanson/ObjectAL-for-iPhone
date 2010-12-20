@@ -57,9 +57,48 @@ static void audioQueuePropertyListenerCallback(void *inUserData, AudioQueueRef q
 {
 	if(state == OALPlayerStateClosed)
 		return;
+	
 	state				= OALPlayerStateClosed;
 	
 	OAL_LOG_DEBUG(@"Closing AudioQueue player.");
+	
+	OSStatus audioError;
+	
+	//AudioQueueSetParameter(queue, kAudioQueueParam_Volume, 0.0f);
+	
+	if(queue){
+		audioError			= AudioQueueFlush(queue);
+		REPORT_AUDIO_QUEUE_CALL(audioError, @"AudioQueueFlush");
+		
+		if(queueIsRunning)
+			queueIsStopping		= YES;
+		audioError			= AudioQueueStop(queue, YES); // <-- YES means stop immediately
+		REPORT_AUDIO_QUEUE_CALL(audioError, @"AudioQueueStop(queue, YES);");
+		
+		//while(queueIsRunning){
+			OAL_LOG_DEBUG(@"Waiting for Audio Queue to stop running.");
+			[NSThread sleepForTimeInterval:0.1];
+		//}
+	
+		//Note about not freeing the buffers:
+		//Disposing of an audio queue also disposes of its buffers.
+		//Call AudioQueueFreeBuffer only if you want to dispose of a particular buffer while continuing to use an audio queue.
+		//You can dispose of a buffer only when the audio queue that owns it is stopped (that is, not processing audio data).
+		
+		//Note about not freeing timeline:
+		//Disposing of an audio queue automatically disposes of any associated resources, including a timeline object.
+		//Call AudioQueueDisposeTimeline only if you want to dispose of a timeline object and not the audio queue associated with it.
+		
+		audioError			= AudioQueueDispose(queue, YES);// <-- YES means do so synchronously
+		REPORT_AUDIO_QUEUE_CALL(audioError, @"AudioQueueDispose(queue, YES);");
+	}
+	queue				= NULL;
+	queueTimeline		= NULL;
+	queueIsRunning		= NO;
+	
+	if(packetDescs)
+		free(packetDescs);
+	packetDescs			= NULL;
 	
 	[assetReaderMixerOutput release];
 	assetReaderMixerOutput	= nil;
@@ -83,39 +122,6 @@ static void audioQueuePropertyListenerCallback(void *inUserData, AudioQueueRef q
 	trackEnded			= NO;
 	duration			= 0;
 	//	volume		= 1.0f;
-	
-	OSStatus audioError;
-	
-	//AudioQueueSetParameter(queue, kAudioQueueParam_Volume, 0.0f);
-	
-	if(queue){
-		audioError			= AudioQueueFlush(queue);
-		REPORT_AUDIO_QUEUE_CALL(audioError, @"AudioQueueFlush");
-		
-		if(queueIsRunning)
-			queueIsStopping		= YES;
-		audioError			= AudioQueueStop(queue, YES); // <-- YES means stop immediately
-		REPORT_AUDIO_QUEUE_CALL(audioError, @"AudioQueueStop(queue, YES);");
-	
-		//Note about not freeing the buffers:
-		//Disposing of an audio queue also disposes of its buffers.
-		//Call AudioQueueFreeBuffer only if you want to dispose of a particular buffer while continuing to use an audio queue.
-		//You can dispose of a buffer only when the audio queue that owns it is stopped (that is, not processing audio data).
-		
-		//Note about not freeing timeline:
-		//Disposing of an audio queue automatically disposes of any associated resources, including a timeline object.
-		//Call AudioQueueDisposeTimeline only if you want to dispose of a timeline object and not the audio queue associated with it.
-		
-		audioError			= AudioQueueDispose(queue, YES);// <-- YES means do so synchronously
-		REPORT_AUDIO_QUEUE_CALL(audioError, @"AudioQueueDispose(queue, YES);");
-	}
-	queue				= NULL;
-	queueTimeline		= NULL;
-	queueIsRunning		= NO;
-	
-	if(packetDescs)
-		free(packetDescs);
-	packetDescs			= NULL;
 	
 	packetIndex			= 0;
 	packetIndexSeeking	= 0;
@@ -801,6 +807,11 @@ static void audioQueuePropertyListenerCallback(void *inUserData, AudioQueueRef q
 {
 	if(state == OALPlayerStateClosed)
 		return;
+	
+	if(state != OALPlayerStatePlaying && state != OALPlayerStatePaused){
+		OAL_LOG_DEBUG(@"Not playing. Will not attempt to stop audio queue.");
+		return;
+	}
 	
 	OAL_LOG_DEBUG(@"Stop");
 	

@@ -370,7 +370,8 @@ static Class preferredPlayerClass = nil;
 		{
 			value = 0;
 		}
-		player.volume = value;
+		if(player)
+			player.volume = value;
 	}
 }
 
@@ -669,7 +670,7 @@ static Class preferredPlayerClass = nil;
 	
 	OPTIONALLY_SYNCHRONIZED(self)
 	{
-		bool alreadyLoaded = [[url absoluteString] isEqualToString:[currentlyLoadedUrl absoluteString]];
+		bool alreadyLoaded = (currentlyLoadedUrl && [[url absoluteString] isEqualToString:[currentlyLoadedUrl absoluteString]]);
 		OAL_LOG_DEBUG_COND(alreadyLoaded, @"%@: %@: URL already preloaded", self, url);
 
 		// Mimic a successful load
@@ -679,6 +680,9 @@ static Class preferredPlayerClass = nil;
 			return YES;
 		}
 		
+		[self clear];
+		
+		/*
 		[self stopActions];
 		
 		SIMULATOR_BUG_WORKAROUND_PREPARE_PLAYBACK();
@@ -692,7 +696,7 @@ static Class preferredPlayerClass = nil;
 		{
 			[[NSNotificationCenter defaultCenter] performSelectorOnMainThread:@selector(postNotification:) withObject:[NSNotification notificationWithName:OALAudioTrackStoppedPlayingNotification object:self] waitUntilDone:NO];
 		}
-		
+		*/
 		NSError* error;
 		Class playerClass = (preferredPlayerClass)?preferredPlayerClass:[OALAudioPlayer getClassForPlayerType:OALAudioPlayerTypeDefault];
 		if(!playerClass)
@@ -723,10 +727,12 @@ static Class preferredPlayerClass = nil;
 		playing = NO;
 		paused = NO;
 		
-		if(player.status == OALPlayerStatusReadyToPlay)
+		if(player.status == OALPlayerStatusReadyToPlay){
+			OAL_LOG_DEBUG(@"Player is ready to play delaying post ready by 0.01");
 			[self performSelector:@selector(postTrackSourceChangedNotification:) withObject:nil afterDelay:0.01];
-		else{
-			[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(postTrackSourceChangedNotification:) name:@"OALAudioPlayerReadyToPlay" object:player];
+		}else{
+			OAL_LOG_DEBUG(@"Player is NOT ready to play watching for internal ready to play notification");
+			[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(postTrackSourceChangedNotification:) name:@"OALAudioPlayerReadyToPlay" object:nil];
 		}
 		return YES;
 	}
@@ -734,7 +740,7 @@ static Class preferredPlayerClass = nil;
 
 - (void) postTrackSourceChangedNotification:(NSNotification *)notification
 {	
-	[[NSNotificationCenter defaultCenter] removeObserver:self name:@"OALAudioPlayerReadyToPlay" object:player];
+	[[NSNotificationCenter defaultCenter] removeObserver:self name:@"OALAudioPlayerReadyToPlay" object:nil];
 	
 	[[NSNotificationCenter defaultCenter] performSelectorOnMainThread:@selector(postNotification:) withObject:[NSNotification notificationWithName:OALAudioTrackSourceChangedNotification object:self] waitUntilDone:NO];
 }
@@ -993,24 +999,36 @@ static Class preferredPlayerClass = nil;
 
 - (void) clear
 {
-	OPTIONALLY_SYNCHRONIZED(self)
+	@synchronized(self)
 	{
+		[[NSNotificationCenter defaultCenter] removeObserver:self name:@"OALAudioPlayerReadyToPlay" object:nil];
+		
 		[self stopActions];
 		[currentlyLoadedUrl release];
 		currentlyLoadedUrl = nil;
 		
 		[player stop];
-		[player release];
-		player = nil;
+		
 		paused = NO;
 		muted = NO;
-		self.currentTime = 0;
 
 		if(playing)
 		{
 			playing = NO;
 			[[NSNotificationCenter defaultCenter] performSelectorOnMainThread:@selector(postNotification:) withObject:[NSNotification notificationWithName:OALAudioTrackStoppedPlayingNotification object:self] waitUntilDone:NO];
 		}
+		
+		//This must come after the notification
+		//dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100000000), dispatch_get_main_queue(), ^{
+			OAL_LOG_DEBUG(@"Releasing player implementation");
+			[player release];
+		//});
+		player = nil;
+		
+		[NSThread sleepForTimeInterval:0.01];
+		
+		//This should come after the player is nil
+		self.currentTime = 0;
 	}
 }
 
